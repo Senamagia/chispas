@@ -1,0 +1,21 @@
+{
+  "name": "Chispas",
+  "short_name": "Chispas",
+  "description": "Tus chapuzas, bajo control",
+  "lang": "es",
+  "start_url": "./#inicio",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#231A4F",
+  "theme_color": "#231A4F",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Apuntar material", "url": "./#material", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Trabajos", "url": "./#trabajos", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
