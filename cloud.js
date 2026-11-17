@@ -67,6 +67,11 @@ window.cloud = cloud;
     db.herramientas.filter((h) => h.donde === 'Prestada' && h.desde).forEach((h) => {
       const w = h.desde + 7 * 864e5; if (w > ahora) out[`${uid}_h_${h.id}`] = { when: w, title: 'Herramienta prestada', body: `${h.nombre} lleva una semana fuera (${h.detalle || 'prestada'}).`, link: '#material' };
     });
+    // Fin del día: cuánto material pequeño has gastado
+    const hoy20 = new Date(); hoy20.setHours(20, 30, 0, 0);
+    if (hoy20.getTime() > ahora && window.pendientesGastoDia) pendientesGastoDia().forEach((t) => {
+      out[`${uid}_g_${t.id}`] = { when: hoy20.getTime(), title: 'Fin del día · ' + t.titulo, body: '¿Cuántos tacos, tornillos y demás has gastado hoy? Apúntalo en 10 segundos.', link: '#gastodia/' + t.id };
+    });
     return out;
   }
   async function sincronizarAvisos() {

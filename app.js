@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.3.1';
+const VERSION = '0.4.0';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -386,6 +386,7 @@ views.preparar = (id) => {
   const tag = (h) => h.donde === 'Coche' ? '<span class="chip">Coche</span>' : h.donde === 'Prestada' || h.donde === 'En una obra' ? `<span class="chip red">${esc(h.detalle || h.donde)}</span>` : `<span class="chip warn">${esc(h.donde)}</span>`;
   const delArmario = herr.filter((h) => h.donde === 'Armario de casa').length;
   return `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><div><div class="muted">${fmtWhen(t.cuando)} · ${esc(nombreTrabajo(t))}</div><h1>Qué te llevas</h1></div></header>
+  <a class="btn brand block" href="#salida" style="min-height:56px">Coger herramientas: modo «Salir de casa»</a>
   ${delArmario ? `<div class="tip"><b>Esta noche:</b> pasa ${delArmario} ${delArmario === 1 ? 'cosa' : 'cosas'} del armario al coche y carga las baterías.</div>` : ''}
   <section class="card"><h2>Herramientas${ofs.length ? ' · ' + ofs.join(', ') : ''}</h2><div class="list">${herr.map((h) => `<label class="item" style="align-items:center"><input type="checkbox" class="chk"><span class="grow">${esc(h.nombre)}</span>${tag(h)}</label>`).join('') || '<div class="empty">Apunta tus herramientas en Material › Herramientas y marca para qué oficios las usas: aquí saldrá la lista sola.</div>'}</div></section>
   <section class="card"><h2>Material</h2><div class="list">${mat.map((m) => `<label class="item" style="align-items:center"><input type="checkbox" class="chk"><span class="grow">${esc(m.nombre)} <span class="muted">${esc(m.cantidad || '')}</span></span>${m.comprado ? '<span class="chip ok">Comprado</span>' : '<span class="chip red">Comprar</span>'}</label>`).join('') || '<div class="empty">No hay material apuntado para este trabajo.</div>'}</div></section>`;
@@ -545,7 +546,7 @@ function buscaTrabajo(txt) {
 function interpretar(texto) {
   const t = texto.trim().replace(/^chispas[, ]+/i, ''), l = t.toLowerCase();
   let acc;
-  const mHerr = l.match(/^(?:el |la |los |las )?(.+?) (?:está|están) en (?:el |la )?(coche|armario|casa|maletín|obra.*)$/) || l.match(/^(?:el |la )?(.+?) la tiene (.+)$/);
+  const mHerr = l.match(/^(?:el |la |los |las )?(.+?) (?:está|están|lo he dejado|la he dejado|va) en (?:el |la |mi )?(.+)$/) || l.match(/^(?:el |la )?(.+?) la tiene (.+)$/);
   if (/^(compra|comprar|apunta|añade|necesito|hay que comprar)\b/.test(l)) {
     const resto = t.replace(/^(compra|comprar|apunta|añade|necesito|hay que comprar)\s+/i, '');
     const tr = buscaTrabajo(resto); const tienda = /leroy/i.test(resto) ? 'Leroy Merlin' : /obramat/i.test(resto) ? 'Obramat' : 'Obramat';
@@ -553,7 +554,8 @@ function interpretar(texto) {
     acc = { tipo: 'MATERIAL', resumen: `${nombre} → lista de compra (${tienda})`, extra: tr ? nombreTrabajo(tr) : 'Para reponer', run: () => db.material.push({ id: uid(), nombre: cap(nombre), cantidad: '', tienda, trabajoId: tr?.id || null, comprado: false, creado: Date.now() }) };
   } else if (mHerr && db.herramientas.length) {
     const h = db.herramientas.find((x) => mHerr[1].split(/\s+/).some((w) => w.length > 3 && x.nombre.toLowerCase().includes(w)));
-    const prest = /la tiene/.test(l), destino = prest ? 'Prestada' : /coche/.test(mHerr[2]) ? 'Coche' : /maletín/.test(mHerr[2]) ? 'Maletín' : /obra/.test(mHerr[2]) ? 'En una obra' : 'Armario de casa';
+    const prest = /la tiene/.test(l), dicho = mHerr[2].toLowerCase(), lug = lugares().find((x) => dicho.includes(x.toLowerCase()) || dicho.includes(x.toLowerCase().split(' ')[0]));
+    const destino = prest ? 'Prestada' : lug || (/obra/.test(dicho) ? 'En una obra' : /casa|armario/.test(dicho) ? lugares().find((x) => /casa|armario/i.test(x)) || lugares()[0] : lugares()[0]);
     acc = h ? { tipo: 'HERRAMIENTA', resumen: `${h.nombre} → ${destino}`, extra: prest ? 'La tiene ' + cap(mHerr[2]) : '', run: () => { h.donde = destino; h.detalle = prest ? 'La tiene ' + cap(mHerr[2]) : destino === 'En una obra' ? cap(mHerr[2]) : ''; h.desde = prest || destino === 'En una obra' ? Date.now() : null; } } : null;
   }
   if (!acc) {
@@ -583,7 +585,7 @@ window.render = function render() {
   const [route, arg] = (location.hash.slice(1) || 'inicio').split('/');
   const v = views[route] || views.inicio;
   $('#view').innerHTML = v(arg);
-  const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos' }[route] || route;
+  const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos', gastodia: 'trabajos', salida: 'material' }[route] || route;
   document.querySelectorAll('.nav a').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
 };
 window.addEventListener('hashchange', () => { closeSheet(); render(); window.scrollTo(0, 0); });

@@ -39,43 +39,99 @@ const TIPOS_CHAPUZA = [
   { id: 'colgar', oficio: 'Otros', nombre: 'Colgar cuadros, baldas o TV', items: ['Tacos de nailon', 'Tornillos', 'Tacos para pladur (basculantes)', 'Soporte de TV', 'Escuadras de balda'] },
 ];
 
-function itemsDeTipo(tipoId) {
-  const t = TIPOS_CHAPUZA.find((x) => x.id === tipoId);
-  const extra = (db.plantillas || {})[tipoId] || [];
-  return [...(t ? t.items : []), ...extra.filter((e) => !(t && t.items.includes(e)))];
+/* Herramientas habituales por tipo de chapuza */
+const HERR_TIPO = {
+  luz: ['Taladro percutor', 'Brocas de pared 6 y 8', 'Rozadora o radial', 'Buscapolos', 'Detector de tensión', 'Pelacables', 'Alicates universales', 'Destornilladores aislados', 'Guía pasacables', 'Escalera'],
+  enchufe: ['Taladro percutor', 'Rozadora o radial', 'Buscapolos', 'Detector de tensión', 'Pelacables', 'Destornilladores aislados', 'Guía pasacables'],
+  mecanismos: ['Buscapolos', 'Detector de tensión', 'Destornilladores aislados', 'Pelacables'],
+  lampara: ['Escalera', 'Taladro', 'Brocas de pared 6 y 8', 'Buscapolos', 'Destornilladores aislados', 'Pelacables'],
+  linea: ['Rozadora o radial', 'Taladro percutor', 'Guía pasacables', 'Pelacables', 'Polímetro', 'Destornilladores aislados'],
+  cuadro: ['Polímetro', 'Comprobador de diferenciales', 'Destornilladores aislados', 'Pelacables', 'Crimpadora de punta hueca'],
+  grifo: ['Llave inglesa', 'Llave de grifos de lavabo', 'Alicates de presión', 'Linterna frontal', 'Cubo y trapos'],
+  cisterna: ['Llave inglesa', 'Alicates de presión', 'Destornilladores', 'Cubo y trapos'],
+  desatasco: ['Desatascador de ventosa', 'Sonda desatascadora', 'Guantes', 'Cubo y trapos'],
+  termo: ['Taladro percutor', 'Brocas de pared 6 y 8', 'Llave inglesa', 'Llave grifa', 'Nivel', 'Polímetro', 'Manguera para vaciar'],
+  toma: ['Cortatubos multicapa', 'Calibrador multicapa', 'Prensadora multicapa', 'Taladro', 'Rozadora o radial'],
+  sellado: ['Pistola de silicona', 'Cúter', 'Espátula de silicona'],
+  alicatado: ['Cortadora de azulejo', 'Radial con disco de diamante', 'Llana dentada', 'Nivel láser', 'Mazo de goma', 'Batidora', 'Cubos', 'Rodilleras'],
+  solado: ['Cortadora de azulejo', 'Radial con disco de diamante', 'Llana dentada', 'Nivel láser', 'Mazo de goma', 'Batidora', 'Cubos', 'Rodilleras'],
+  rozas: ['Llana', 'Espátulas', 'Cubos', 'Batidora', 'Lijadora'],
+  ladrillo: ['Paleta', 'Nivel', 'Cordel', 'Mazo', 'Plomada', 'Cubos'],
+  tabique: ['Atornillador', 'Nivel láser', 'Cúter', 'Escofina', 'Tijera de chapa', 'Alzaplacas', 'Llanas y espátulas', 'Metro', 'Lápiz de carpintero'],
+  techo: ['Atornillador', 'Nivel láser', 'Cúter', 'Escofina', 'Tijera de chapa', 'Alzaplacas', 'Llanas y espátulas', 'Escalera o andamio'],
+  trasdosado: ['Atornillador', 'Nivel láser', 'Cúter', 'Escofina', 'Tijera de chapa', 'Llanas y espátulas'],
+  puerta: ['Ingletadora', 'Taladro', 'Nivel', 'Formón', 'Martillo', 'Sargentos', 'Pistola de espuma'],
+  mueble: ['Atornillador', 'Taladro', 'Nivel', 'Llaves Allen', 'Metro'],
+  rodapie: ['Ingletadora', 'Clavadora o martillo', 'Pistola de silicona', 'Metro'],
+  pintar: ['Rodillos', 'Pértiga', 'Escalera', 'Espátulas', 'Lijadora', 'Cubeta'],
+  techos: ['Rodillo', 'Pértiga', 'Escalera'],
+  gotele: ['Llanas', 'Lijadora con aspirador', 'Batidora', 'Escalera'],
+  colgar: ['Taladro', 'Brocas de pared 6 y 8', 'Nivel', 'Detector de cables y tuberías', 'Metro'],
+};
+
+/* Listas editables: lo que añade se guarda, lo que quita se oculta, y puede crear listas nuevas */
+function tiposTodos() { return [...TIPOS_CHAPUZA, ...(db.tiposPropios || [])]; }
+function plantilla(clave) {
+  db.plantillas = db.plantillas || {};
+  let p = db.plantillas[clave];
+  if (Array.isArray(p)) p = db.plantillas[clave] = { extra: p, ocultos: [] }; // versiones anteriores
+  return p || (db.plantillas[clave] = { extra: [], ocultos: [] });
+}
+function itemsDeTipo(tipoId, modo = 'material') {
+  const t = tiposTodos().find((x) => x.id === tipoId), base = modo === 'material' ? (t?.items || []) : (HERR_TIPO[tipoId] || t?.herr || []);
+  const p = plantilla((modo === 'material' ? '' : 'h:') + tipoId);
+  return [...base.filter((i) => !p.ocultos.includes(i)), ...p.extra.filter((e) => !base.includes(e))];
 }
 
-/* Checklist: elige tipo de chapuza, marca el material y va a la lista de compra del trabajo. */
-let ckTipo = null, ckSel = new Set(), ckTrabajo = null;
-function checklistMaterial(trabajoId) {
-  ckTrabajo = trabajoId || ckTrabajo || db.trabajos.find((t) => t.estado !== 'terminado')?.id || null;
+let ckTipo = null, ckSel = new Set(), ckTrabajo = null, ckModo = 'material', ckEditar = false;
+function checklistMaterial(trabajoId, modo) {
+  if (modo && modo !== ckModo) { ckModo = modo; ckSel = new Set(); }
+  ckTrabajo = trabajoId !== undefined ? trabajoId : ckTrabajo;
   const t = trabajo(ckTrabajo);
-  const tipos = TIPOS_CHAPUZA.filter((x) => !t || !(t.oficios || []).length || t.oficios.includes(x.oficio));
+  const tipos = tiposTodos().filter((x) => !t || !(t.oficios || []).length || t.oficios.includes(x.oficio) || x.propio);
   if (!ckTipo || !tipos.some((x) => x.id === ckTipo)) ckTipo = (tipos[0] || TIPOS_CHAPUZA[0]).id;
-  const yaEnLista = new Set(db.material.filter((m) => m.trabajoId === ckTrabajo && !m.comprado).map((m) => m.nombre.toLowerCase()));
+  const clave = (ckModo === 'material' ? '' : 'h:') + ckTipo, tipo = tiposTodos().find((x) => x.id === ckTipo);
+  const items = itemsDeTipo(ckTipo, ckModo);
+  const ya = ckModo === 'material'
+    ? new Set(db.material.filter((m) => m.trabajoId === ckTrabajo && !m.comprado).map((m) => m.nombre.toLowerCase()))
+    : new Set(db.herramientas.map((h) => h.nombre.toLowerCase()));
   const stock = (n) => db.stock.find((s) => s.nombre.toLowerCase() === n.toLowerCase() && s.cantidad > 0);
-  const items = itemsDeTipo(ckTipo);
-  openSheet(`<h2>Material para la chapuza</h2>
-    ${db.trabajos.length ? select('ckTrabajo', 'Trabajo', [['', '— Para reponer —'], ...trabajoOptions(false)], ckTrabajo || '') : ''}
-    <div class="pills" id="ck-tipos">${tipos.map((x) => `<button type="button" data-tipo="${x.id}" aria-pressed="${x.id === ckTipo}">${esc(x.nombre)}</button>`).join('')}</div>
-    <div class="list" id="ck-items">${items.map((n) => { const ya = yaEnLista.has(n.toLowerCase()), st = stock(n);
-      return `<label class="item" style="align-items:center"><input type="checkbox" class="chk" data-n="${esc(n)}" ${ya ? 'checked disabled' : ckSel.has(n) ? 'checked' : ''}><span class="grow">${esc(n)}</span>${ya ? '<span class="chip ok">Ya apuntado</span>' : st ? `<span class="chip">Tienes ${st.cantidad} ${esc(st.unidad || '')}</span>` : ''}</label>`; }).join('')}</div>
-    <div class="row"><input id="ck-nuevo" placeholder="Añadir otro material…" aria-label="Añadir otro material" style="flex:1;min-height:46px;border:1.5px solid var(--line2);border-radius:10px;padding:0 12px;background:var(--card)"><button class="btn sm" id="ck-add">Añadir</button></div>
-    <div class="muted">Lo que añadas se queda guardado en «${esc(TIPOS_CHAPUZA.find((x) => x.id === ckTipo)?.nombre)}» para la próxima vez.</div>
-    <button class="btn brand block" id="ck-ok">Añadir ${ckSel.size || ''} a la lista de compra</button>`, (s) => {
-    const sel = s.querySelector('#f-ckTrabajo'); sel && (sel.onchange = () => { ckTrabajo = sel.value || null; checklistMaterial(ckTrabajo); });
-    s.querySelectorAll('[data-tipo]').forEach((b) => (b.onclick = () => { ckTipo = b.dataset.tipo; checklistMaterial(ckTrabajo); }));
-    s.querySelectorAll('[data-n]').forEach((c) => (c.onchange = () => { c.checked ? ckSel.add(c.dataset.n) : ckSel.delete(c.dataset.n); s.querySelector('#ck-ok').textContent = `Añadir ${ckSel.size || ''} a la lista de compra`; }));
-    const add = () => { const v = s.querySelector('#ck-nuevo').value.trim(); if (!v) return;
-      db.plantillas = db.plantillas || {}; const l = (db.plantillas[ckTipo] = db.plantillas[ckTipo] || []); if (!itemsDeTipo(ckTipo).includes(v)) l.push(v);
-      ckSel.add(v); save(); checklistMaterial(ckTrabajo); };
+  const fila = (n) => {
+    if (ckEditar) return `<div class="item" style="align-items:center"><span class="grow">${esc(n)}</span><button class="btn sm danger" data-quitar="${esc(n)}">Quitar</button></div>`;
+    const hay = ya.has(n.toLowerCase()), st = ckModo === 'material' && stock(n);
+    return `<label class="item" style="align-items:center"><input type="checkbox" class="chk" data-n="${esc(n)}" ${hay ? 'checked disabled' : ckSel.has(n) ? 'checked' : ''}><span class="grow">${esc(n)}</span>${hay ? `<span class="chip ok">${ckModo === 'material' ? 'Ya apuntado' : 'Ya la tienes'}</span>` : st ? `<span class="chip">Tienes ${st.cantidad} ${esc(st.unidad || '')}</span>` : ''}</label>`;
+  };
+  openSheet(`<div class="tabs" role="tablist"><button role="tab" aria-selected="${ckModo === 'material'}" data-modo="material">Material</button><button role="tab" aria-selected="${ckModo === 'herr'}" data-modo="herr">Herramientas</button></div>
+    ${ckModo === 'material' && db.trabajos.length ? select('ckTrabajo', 'Para el trabajo', [['', '— Para reponer —'], ...trabajoOptions(false)], ckTrabajo || '') : ''}
+    <div class="pills" id="ck-tipos">${tipos.map((x) => `<button type="button" data-tipo="${x.id}" aria-pressed="${x.id === ckTipo}">${esc(x.nombre)}</button>`).join('')}<button type="button" data-nuevo>+ Lista nueva</button></div>
+    <div class="between"><b>${esc(tipo?.nombre || '')}</b><button class="btn sm ${ckEditar ? '' : 'light'}" data-editar>${ckEditar ? 'Hecho' : 'Editar lista'}</button></div>
+    <div class="list">${items.map(fila).join('') || '<div class="empty">Lista vacía: añade lo que uses.</div>'}</div>
+    <div class="row"><input id="ck-nuevo" placeholder="${ckModo === 'material' ? 'Añadir otro material…' : 'Añadir otra herramienta…'}" aria-label="Añadir a la lista" style="flex:1;min-height:46px;border:1.5px solid var(--line2);border-radius:10px;padding:0 12px;background:var(--card)"><button class="btn sm" id="ck-add">Añadir</button></div>
+    ${ckEditar ? `<button class="btn sm light" data-restaurar style="align-self:center">Restaurar la lista original</button>${tipo?.propio ? '<button class="btn sm danger" data-borrarlista style="align-self:center">Borrar esta lista</button>' : ''}` : `<div class="muted">Lo que añadas se queda guardado en esta lista para la próxima vez.</div>
+    <button class="btn brand block" id="ck-ok">${ckModo === 'material' ? `Añadir ${ckSel.size || ''} a la lista de compra` : `Guardar ${ckSel.size || ''} en mis herramientas`}</button>`}`, (s) => {
+    const again = () => checklistMaterial(ckTrabajo);
+    s.querySelectorAll('[data-modo]').forEach((b) => (b.onclick = () => checklistMaterial(ckTrabajo, b.dataset.modo)));
+    const sel = s.querySelector('#f-ckTrabajo'); sel && (sel.onchange = () => { ckTrabajo = sel.value || null; again(); });
+    s.querySelectorAll('[data-tipo]').forEach((b) => (b.onclick = () => { ckTipo = b.dataset.tipo; again(); }));
+    s.querySelector('[data-nuevo]').onclick = () => { const n = prompt('Nombre de la lista nueva (p. ej. «Cambio de persiana»)'); if (!n) return;
+      const nt = { id: 'p' + uid(), oficio: (t?.oficios || [])[0] || 'Otros', nombre: n, items: [], propio: true }; (db.tiposPropios = db.tiposPropios || []).push(nt); ckTipo = nt.id; ckEditar = false; save(); again(); };
+    s.querySelector('[data-editar]').onclick = () => { ckEditar = !ckEditar; again(); };
+    s.querySelectorAll('[data-quitar]').forEach((b) => (b.onclick = () => { const p = plantilla(clave), n = b.dataset.quitar;
+      if (p.extra.includes(n)) p.extra = p.extra.filter((x) => x !== n); else p.ocultos.push(n); save(); again(); }));
+    const rest = s.querySelector('[data-restaurar]'); rest && (rest.onclick = () => { const p = plantilla(clave); p.ocultos = []; save(); again(); });
+    const bl = s.querySelector('[data-borrarlista]'); bl && (bl.onclick = () => { if (!confirm('¿Borrar esta lista?')) return; db.tiposPropios = db.tiposPropios.filter((x) => x.id !== ckTipo); ckTipo = null; ckEditar = false; save(); again(); });
+    s.querySelectorAll('[data-n]').forEach((c) => (c.onchange = () => { c.checked ? ckSel.add(c.dataset.n) : ckSel.delete(c.dataset.n); const ok = s.querySelector('#ck-ok');
+      ok.textContent = ckModo === 'material' ? `Añadir ${ckSel.size || ''} a la lista de compra` : `Guardar ${ckSel.size || ''} en mis herramientas`; }));
+    const add = () => { const v = s.querySelector('#ck-nuevo').value.trim(); if (!v) return; const p = plantilla(clave);
+      p.ocultos = p.ocultos.filter((x) => x !== v); if (!itemsDeTipo(ckTipo, ckModo).includes(v)) p.extra.push(v); if (!ckEditar) ckSel.add(v); save(); again(); };
     s.querySelector('#ck-add').onclick = add; s.querySelector('#ck-nuevo').onkeydown = (e) => e.key === 'Enter' && add();
-    s.querySelector('#ck-ok').onclick = () => {
-      if (!ckSel.size) return toast('Marca algo de la lista');
-      const n = ckSel.size;
-      ckSel.forEach((nombre) => db.material.push({ id: uid(), nombre, cantidad: '', tienda: 'Obramat', trabajoId: ckTrabajo || null, comprado: false, creado: Date.now() }));
-      ckSel = new Set(); save(); closeSheet(); render(); toast(`${n} añadidos a la lista de compra`);
-    };
+    const ok = s.querySelector('#ck-ok'); ok && (ok.onclick = () => {
+      if (!ckSel.size) return toast('Marca algo de la lista'); const n = ckSel.size;
+      if (ckModo === 'material') ckSel.forEach((nombre) => db.material.push({ id: uid(), nombre, cantidad: '', tienda: 'Obramat', trabajoId: ckTrabajo || null, comprado: false, creado: Date.now() }));
+      else ckSel.forEach((nombre) => db.herramientas.push({ id: uid(), nombre, tipo: 'herramienta', donde: lugares()[1] || lugares()[0], casa: lugares()[1] || lugares()[0], oficios: [tipo?.oficio].filter(Boolean) }));
+      ckSel = new Set(); save(); closeSheet(); render(); toast(ckModo === 'material' ? `${n} añadidos a la lista de compra` : `${n} herramientas guardadas. Muévelas a su sitio en Material › Herramientas`);
+    });
   });
 }
 window.checklistMaterial = checklistMaterial;
+window.checklistHerramientas = (id) => checklistMaterial(id, 'herr');

@@ -40,10 +40,18 @@ views.presupuesto = (id) => {
     <div style="display:grid;grid-template-columns:64px 74px 1fr auto;gap:6px;align-items:center">
       <input data-l="${l.id}" data-f="cantidad" value="${esc(l.cantidad)}" inputmode="decimal" aria-label="Cantidad" style="min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right">
       <select data-l="${l.id}" data-f="unidad" aria-label="Unidad" style="min-height:40px;border:1.5px solid var(--line2);border-radius:9px;background:var(--card)">${UNIDADES.map((u) => `<option ${u === l.unidad ? 'selected' : ''}>${u}</option>`).join('')}</select>
-      <div class="row" style="gap:4px"><span class="muted">×</span><input data-l="${l.id}" data-f="precio" value="${esc(l.precio)}" inputmode="decimal" aria-label="${l.tipo === 'material' ? 'Coste del material' : 'Precio'}" style="width:100%;min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right"><span class="muted">€</span></div>
+      <div class="row" style="gap:4px"><span class="muted">×</span><input data-l="${l.id}" data-f="precio" value="${esc(String(l.pack && num(l.precio) != null ? Math.round(num(l.precio) * 10000) / 10000 : l.precio).replace('.', ','))}" ${l.pack ? 'readonly' : ''} inputmode="decimal" aria-label="${l.tipo === 'material' ? 'Coste del material' : 'Precio'}" style="width:100%;min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right"><span class="muted">€</span></div>
       <b data-imp="${l.id}" style="min-width:64px;text-align:right">${eur((num(l.cantidad) || 0) * lineaPrecioCliente(t, l))}</b>
     </div>
-    <div class="row" style="gap:6px"><button class="chip ${l.tipo === 'material' ? '' : 'ink'}" style="border:0" onclick="tipoLinea('${t.id}','${l.id}','mano')">Mano de obra</button><button class="chip ${l.tipo === 'material' ? 'ink' : ''}" style="border:0" onclick="tipoLinea('${t.id}','${l.id}','material')">Material${l.tipo === 'material' ? ' · coste + margen' : ''}</button></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="chip ${l.tipo === 'material' ? '' : 'ink'}" style="border:0" onclick="tipoLinea('${t.id}','${l.id}','mano')">Mano de obra</button><button class="chip ${l.tipo === 'material' ? 'ink' : ''}" style="border:0" onclick="tipoLinea('${t.id}','${l.id}','material')">Material${l.tipo === 'material' ? ' · coste + margen' : ''}</button>
+      ${l.tipo === 'material' ? `<button class="chip ${l.pack ? 'ink' : ''}" style="border:0" onclick="packLinea('${t.id}','${l.id}')">${l.pack ? 'En paquete ✓' : 'Viene en paquete'}</button>` : ''}</div>
+    ${l.tipo === 'material' && l.pack ? `<div style="background:var(--bg);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px">
+      <div class="muted">Paquete de</div><div class="pills">${[1, 5, 10, 25, 50, 100, 200, 500].map((n) => `<button aria-pressed="${num(l.packUds) === n}" onclick="packSet('${t.id}','${l.id}','packUds',${n})">${n}</button>`).join('')}</div>
+      <div class="row" style="gap:6px;flex-wrap:wrap"><input data-l="${l.id}" data-f="packUds" value="${esc(l.packUds || '')}" inputmode="numeric" aria-label="Unidades por paquete" style="width:70px;min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right"><span>uds por</span>
+        <input data-l="${l.id}" data-f="packPrecio" value="${esc(l.packPrecio || '')}" inputmode="decimal" aria-label="Precio del paquete" style="width:80px;min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right"><span>€</span>
+        <b data-pu="${l.id}" style="margin-left:auto">${num(l.packUds) && num(l.packPrecio) != null ? '= ' + eurU(num(l.packPrecio) / num(l.packUds)) + '/ud' : ''}</b></div>
+      <div class="muted">Pon en cantidad las unidades que vas a gastar. Te cobra solo esas, no el paquete entero.</div></div>` : ''}
+    ${l.gastado != null ? `<div class="row" style="gap:8px;flex-wrap:wrap;font-size:14px"><span>Gastado en obra: <b>${String(l.gastado).replace('.', ',')}</b> (previsto ${String(l.cantidad).replace('.', ',')})</span>${num(l.gastado) !== num(l.cantidad) ? `<button class="btn sm light" onclick="usarGastado('${t.id}','${l.id}')">Usar lo gastado</button>` : '<span class="chip ok">Cuadra</span>'}</div>` : ''}
   </div>`;
   return `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><div style="flex:1"><div class="muted">Presupuesto n.º ${p.numero} · <span class="chip ${chipE}">${ESTADOS_P[p.estado]}</span></div><h1 style="font-size:26px">${esc(t.titulo)}</h1><div class="muted">${esc(c?.nombre || 'Sin cliente')}${t.direccion ? ' · ' + esc(t.direccion) : ''}</div></div></header>
   <div id="lineas" style="display:flex;flex-direction:column;gap:8px">${p.lineas.map(fila).join('') || '<div class="card empty">Añade partidas desde tu catálogo de precios, a mano o desde un plano.</div>'}</div>
@@ -71,6 +79,9 @@ document.addEventListener('input', (e) => {
   const el = e.target, lid = el.dataset?.l; if (!lid) return;
   const t = db.trabajos.find((x) => x.presu?.lineas.some((l) => l.id === lid)); if (!t) return;
   const l = t.presu.lineas.find((x) => x.id === lid); l[el.dataset.f] = el.value;
+  if (el.dataset.f === 'packUds' || el.dataset.f === 'packPrecio') { const u = num(l.packUds), pp = num(l.packPrecio); l.precio = u && pp != null ? pp / u : '';
+    const pu = document.querySelector(`[data-pu="${lid}"]`); if (pu) pu.textContent = u && pp != null ? '= ' + eurU(pp / u) + '/ud' : '';
+    const pin = document.querySelector(`[data-l="${lid}"][data-f="precio"]`); if (pin) pin.value = l.precio === '' ? '' : String(Math.round(l.precio * 10000) / 10000).replace('.', ','); }
   const imp = document.querySelector(`[data-imp="${lid}"]`); if (imp) imp.textContent = eur((num(l.cantidad) || 0) * lineaPrecioCliente(t, l));
   const T = totales(t); const tot = $('#p-total'); if (tot) tot.textContent = eur(T.total);
   const d = $('#p-desglose'); if (d && t.factura) d.innerHTML = `Base ${eur(T.base)}<br>IVA ${eur(T.iva)}`;
@@ -78,6 +89,14 @@ document.addEventListener('input', (e) => {
 });
 document.addEventListener('change', (e) => { if (e.target.dataset?.f === 'unidad') { const t = db.trabajos.find((x) => x.presu?.lineas.some((l) => l.id === e.target.dataset.l)); if (t) { syncImporte(t); save(); } } });
 
+const eurU = (v) => (v < 1 ? (Math.round(v * 1000) / 1000).toLocaleString('es-ES', { minimumFractionDigits: 3 }) : (Math.round(v * 100) / 100).toLocaleString('es-ES', { maximumFractionDigits: 2 })) + ' €';
+window.eurU = eurU;
+window.packLinea = (id, lid) => { const t = trabajo(id), l = presu(t).lineas.find((x) => x.id === lid); l.pack = !l.pack;
+  if (l.pack) { l.unidad = 'ud'; if (!l.packUds) { l.packUds = 100; l.packPrecio = num(l.precio) || ''; } l.precio = num(l.packPrecio) != null && l.packPrecio !== '' ? num(l.packPrecio) / l.packUds : ''; }
+  else if (l.packPrecio) { l.precio = num(l.packPrecio); }
+  syncImporte(t); save(); render(); };
+window.packSet = (id, lid, k, v) => { const t = trabajo(id), l = presu(t).lineas.find((x) => x.id === lid); l[k] = v; const u = num(l.packUds), pp = num(l.packPrecio); l.precio = u && pp != null ? pp / u : ''; syncImporte(t); save(); render(); };
+window.usarGastado = (id, lid) => { const t = trabajo(id), l = presu(t).lineas.find((x) => x.id === lid); l.cantidad = l.gastado; syncImporte(t); save(); render(); toast('Presupuesto ajustado a lo gastado'); };
 window.presuSet = (id, k, v) => { const t = trabajo(id); presu(t)[k] = v; syncImporte(t); save(); render(); };
 window.nuevaLinea = (id, tipo, datos = {}) => { const t = trabajo(id); presu(t).lineas.push(Object.assign({ id: uid(), concepto: '', cantidad: 1, unidad: 'ud', precio: '', tipo }, datos)); syncImporte(t); save(); render();
   if (!datos.concepto) setTimeout(() => { const ins = document.querySelectorAll('[data-f="concepto"]'); ins[ins.length - 1]?.focus(); }, 50); };
@@ -145,7 +164,7 @@ window.generarPDF = async (id) => {
   const cabecera = () => { doc.setFillColor(...NOCHE); doc.rect(X, y, W, 8, 'F'); doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
     doc.text('Concepto', cols[0], y + 5.4); doc.text('Cantidad', cols[1], y + 5.4, { align: 'right' }); doc.text('Precio', cols[2] + 16, y + 5.4, { align: 'right' }); doc.text('Importe', cols[3], y + 5.4, { align: 'right' }); y += 8; };
   cabecera(); doc.setFont('helvetica', 'normal'); doc.setTextColor(30); doc.setFontSize(10);
-  const filas = p.lineas.map((l) => { const pc = lineaPrecioCliente(t, l), q = num(l.cantidad) || 0; return [l.concepto, `${String(l.cantidad).replace('.', ',')} ${l.unidad}`, eur(pc), eur(q * pc)]; });
+  const filas = p.lineas.map((l) => { const pc = lineaPrecioCliente(t, l), q = num(l.cantidad) || 0; return [l.concepto, `${String(l.cantidad).replace('.', ',')} ${l.unidad}`, eurU(pc), eur(q * pc)]; });
   if (num(p.desplazamiento)) filas.push(['Desplazamiento', '', '', eur(num(p.desplazamiento))]);
   filas.forEach((r, i) => {
     const lines = doc.splitTextToSize(r[0], 100), h = Math.max(7, lines.length * 4.6 + 2.6);
