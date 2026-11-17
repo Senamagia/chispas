@@ -5,6 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
+const VERSION = '0.2.2';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -441,9 +442,9 @@ views.menu = () => `<header class="row"><button class="back" onclick="history.ba
   <section class="card list">
     ${[['#cuenta', 'Tu cuenta', window.cloud?.user ? cloud.user.email + ' · ' + cloud.estado : 'Sin cuenta: los datos solo están en este móvil'], ['#clientes', 'Clientes', `${db.clientes.length} guardados`], ['#catalogo', 'Catálogo de precios', `${db.catalogo.filter((c) => c.precio == null).length ? 'Te faltan ' + db.catalogo.filter((c) => c.precio == null).length + ' por poner' : 'Completo'}`],
        ['#copia', 'Copia de seguridad', db.ajustes.ultimaCopia ? 'Última: ' + fmtWhen(db.ajustes.ultimaCopia) : 'Todavía no has hecho ninguna'], ['#avisos', 'Avisos en el móvil', 'Permisos y prueba'],
-       ['#apariencia', 'Apariencia', { auto: 'Automático (como el móvil)', claro: 'Claro', oscuro: 'Oscuro' }[db.ajustes.tema]], ['#voz', 'Voz', 'Qué le puedes decir']]
+       ['#apariencia', 'Apariencia', { auto: 'Automático (como el móvil)', claro: 'Claro', oscuro: 'Oscuro' }[db.ajustes.tema]], ['#voz', 'Voz', 'Qué le puedes decir'], ['javascript:actualizar()', 'Buscar actualización', 'Tienes la versión ' + VERSION]]
       .map(([h, t, s]) => `<a class="item" href="${h}" style="text-decoration:none;color:inherit;align-items:center"><div class="grow"><div class="t">${t}</div><div class="muted">${esc(s)}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>`).join('')}
-  </section><div class="muted" style="text-align:center">Chispas v0.2.1</div>`;
+  </section><div class="muted" style="text-align:center">Chispas v${VERSION}</div>`;
 
 let oficioCat = 'Electricidad';
 views.catalogo = () => {
@@ -598,3 +599,26 @@ setInterval(async () => {
 }, 60000);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+/* ---------- Actualizaciones ---------- */
+window.actualizar = async (silencio) => {
+  if (!silencio) toast('Buscando actualización…');
+  try {
+    const { v } = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then((r) => r.json());
+    if (v === VERSION) { if (!silencio) toast('Ya tienes la última versión (' + VERSION + ')'); return; }
+    if (silencio) return mostrarAviso(v);
+    toast('Actualizando a la versión ' + v + '…');
+    const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update();
+    for (const k of await caches.keys()) await caches.delete(k);
+    location.reload();
+  } catch { if (!silencio) toast('Sin conexión: prueba con cobertura'); }
+};
+function mostrarAviso(v) {
+  if ($('#update-bar')) return;
+  const b = document.createElement('button'); b.id = 'update-bar'; b.className = 'btn brand';
+  b.style.cssText = 'position:fixed;left:16px;right:16px;top:calc(10px + env(safe-area-inset-top));z-index:25;box-shadow:0 6px 18px rgba(0,0,0,.25)';
+  b.textContent = 'Hay una versión nueva (' + v + ') · Toca para actualizar'; b.onclick = () => actualizar(); document.body.appendChild(b);
+}
+setTimeout(() => actualizar(true), 4000);
+setInterval(() => actualizar(true), 30 * 60e3);
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && actualizar(true));
