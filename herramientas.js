@@ -98,7 +98,8 @@ function barraCarga(h) {
   const [txt, col, n] = CARGA[h.carga || 'llena'];
   return `<span style="display:inline-flex;align-items:center;gap:6px"><span style="display:inline-flex;gap:2px;padding:2px;border:2px solid var(--ink);border-radius:4px">${[1, 2, 3, 4].map((i) => `<span style="width:7px;height:12px;border-radius:1px;background:${i <= n ? col : 'transparent'}"></span>`).join('')}</span><b style="font-size:13px;color:${col}">${txt}</b></span>`;
 }
-const tile = (h, extra = '') => `<button class="tool-tile" onclick="moverRapido('${h.id}')" ${extra}><span class="t">${esc(h.nombre)}</span><span class="muted">${esc(esFuera(h) ? h.detalle || h.donde : h.marca ? [h.marca, h.voltios && h.voltios + ' V', h.ah && h.ah + (h.tipo === 'bateria' ? ' Ah' : ' A')].filter(Boolean).join(' · ') : (h.oficios || []).slice(0, 2).join(', '))}</span>${h.tipo === 'bateria' ? barraCarga(h) : ''}</button>`;
+let selModo = false, selHerr = new Set();
+const tile = (h, extra = '') => `<button class="tool-tile ${selModo && selHerr.has(h.id) ? 'on' : ''}" ${selModo ? `aria-pressed="${selHerr.has(h.id)}" onclick="selToggle('${h.id}')"` : `onclick="moverRapido('${h.id}')"`} ${extra}>${selModo && selHerr.has(h.id) ? '<span class="tick" aria-hidden="true">✓</span>' : ''}<span class="t">${esc(h.nombre)}</span><span class="muted">${esc(esFuera(h) ? h.detalle || h.donde : h.marca ? [h.marca, h.voltios && h.voltios + ' V', h.ah && h.ah + (h.tipo === 'bateria' ? ' Ah' : ' A')].filter(Boolean).join(' · ') : (h.oficios || []).slice(0, 2).join(', '))}</span>${h.tipo === 'bateria' ? barraCarga(h) : ''}</button>`;
 
 /* ---------- Pestaña Herramientas de Material ---------- */
 const vistaMaterialAnterior = views.material;
@@ -109,14 +110,35 @@ views.material = () => {
   const vacias = bats.filter((h) => h.tipo === 'bateria' && h.carga === 'vacia').length;
   const porLugar = lugares().map((l) => [l, db.herramientas.filter((h) => h.donde === l && !esBat(h))]).filter(([, l]) => l.length);
   return `${cabecera}
-  <a class="btn brand block" href="#salida" style="min-height:58px;font-size:17px">Salir de casa: ¿qué te llevas?</a>
-  <div class="grid2"><button class="btn light" onclick="checklistHerramientas()">Herramientas sugeridas</button><button class="btn light" onclick="formLugares()">Mis lugares</button></div>
+  ${selModo ? '' : `<a class="btn brand block" href="#salida" style="min-height:58px;font-size:17px">Salir de casa: ¿qué te llevas?</a>
+  <div class="grid2"><button class="btn light" onclick="checklistHerramientas()">Herramientas sugeridas</button><button class="btn light" onclick="formLugares()">Mis lugares</button></div>`}
+  ${db.herramientas.length ? `<button class="btn ${selModo ? '' : 'ghost'} block" onclick="selModoToggle()">${selModo ? 'Cancelar selección' : 'Seleccionar varias para moverlas'}</button>` : ''}
+  ${selModo ? `<div class="muted" style="text-align:center">Toca las que quieras mover${selHerr.size ? ` · llevas ${selHerr.size}` : ''}.</div>` : ''}
   ${fuera.length ? `<section class="card"><div class="between"><h2>Fuera de su sitio</h2><span class="chip red">${fuera.length}</span></div><div class="tool-grid">${fuera.map((h) => tile(h)).join('')}</div></section>` : ''}
   ${bats.length ? `<section class="card"><div class="between"><h2>Baterías y cargadores</h2>${vacias ? `<span class="chip red">${vacias} vacía${vacias > 1 ? 's' : ''}</span>` : ''}</div><div class="muted">Toca la carga para cambiarla; toca el nombre para moverla.</div>
-    <div class="list">${bats.map((h) => `<div class="item" style="align-items:center"><button class="grow" style="background:none;border:0;text-align:left;padding:0" onclick="moverRapido('${h.id}')"><div class="t">${esc(h.nombre)}</div><div class="muted">${esc([h.tipo === 'cargador' ? 'Cargador' : 'Batería', h.marca, h.voltios && h.voltios + ' V', h.ah && h.ah + (h.tipo === 'bateria' ? ' Ah' : ' A'), h.donde].filter(Boolean).join(' · '))}</div></button>${h.tipo === 'bateria' ? `<button style="background:none;border:0;min-height:44px" aria-label="Cambiar carga" onclick="cicloCarga('${h.id}')">${barraCarga(h)}</button>` : ''}</div>`).join('')}</div></section>` : ''}
-  ${porLugar.map(([l, hs]) => `<section class="card"><div class="between"><h2>${esc(l)}</h2><span class="muted">${hs.length}</span></div><div class="tool-grid">${hs.map((h) => tile(h)).join('')}</div></section>`).join('')}
-  ${db.herramientas.length ? '<div class="muted" style="text-align:center">Toca cualquier herramienta para cambiarla de sitio.</div>' : '<div class="card empty">Apunta tus herramientas con «Añadir» o con «Herramientas sugeridas». Si prestas una o se queda en una obra, te lo recuerdo.</div>'}
-  <button class="btn ghost block" onclick="formHerramienta({tipo:'bateria'})">+ Batería o cargador</button>`;
+    <div class="list">${bats.map((h) => `<div class="item" style="align-items:center;${selModo && selHerr.has(h.id) ? 'background:var(--brand);border-radius:10px;padding-left:8px;padding-right:8px;' : ''}"><button class="grow" style="background:none;border:0;text-align:left;padding:0;color:inherit" onclick="${selModo ? `selToggle('${h.id}')` : `moverRapido('${h.id}')`}"><div class="t">${esc(h.nombre)}</div><div class="muted">${esc([h.tipo === 'cargador' ? 'Cargador' : 'Batería', h.marca, h.voltios && h.voltios + ' V', h.ah && h.ah + (h.tipo === 'bateria' ? ' Ah' : ' A'), h.donde].filter(Boolean).join(' · '))}</div></button>${h.tipo === 'bateria' ? `<button style="background:none;border:0;min-height:44px" aria-label="Cambiar carga" onclick="cicloCarga('${h.id}')">${barraCarga(h)}</button>` : ''}</div>`).join('')}</div></section>` : ''}
+  ${porLugar.map(([l, hs]) => `<section class="card"><div class="between"><h2>${esc(l)}</h2>${selModo ? `<button class="btn sm light" onclick="selVarias('${hs.map((h) => h.id).join(',')}')">Todas</button>` : `<span class="muted">${hs.length}</span>`}</div><div class="tool-grid">${hs.map((h) => tile(h)).join('')}</div></section>`).join('')}
+  ${selModo ? `<div style="position:sticky;bottom:calc(84px + env(safe-area-inset-bottom));z-index:5"><button class="btn block" style="min-height:60px;font-size:18px;box-shadow:0 6px 18px rgba(0,0,0,.25)" onclick="selMover()" ${selHerr.size ? '' : 'disabled'}>${selHerr.size ? `Mover ${selHerr.size} a…` : 'Toca las que quieras mover'}</button></div>` : ''}
+  ${selModo ? '' : db.herramientas.length ? '<div class="muted" style="text-align:center">Toca cualquier herramienta para cambiarla de sitio.</div>' : '<div class="card empty">Apunta tus herramientas con «Añadir» o con «Herramientas sugeridas». Si prestas una o se queda en una obra, te lo recuerdo.</div>'}
+  ${selModo ? '' : `<button class="btn ghost block" onclick="formHerramienta({tipo:'bateria'})">+ Batería o cargador</button>`}`;
+};
+window.selModoToggle = () => { selModo = !selModo; selHerr = new Set(); render(); };
+window.selToggle = (id) => { selHerr.has(id) ? selHerr.delete(id) : selHerr.add(id); navigator.vibrate?.(15); render(); };
+window.selVarias = (ids) => { const l = ids.split(','), todas = l.every((i) => selHerr.has(i)); l.forEach((i) => (todas ? selHerr.delete(i) : selHerr.add(i))); render(); };
+window.selMover = () => {
+  const l = db.herramientas.filter((h) => selHerr.has(h.id)); if (!l.length) return;
+  openSheet(`<h2>Mover ${l.length} ${l.length === 1 ? 'herramienta' : 'herramientas'} a…</h2><div class="muted">${l.map((h) => esc(h.nombre)).join(' · ')}</div>
+    <div class="grid2">${lugares().map((x) => `<button class="btn light" style="min-height:60px;font-size:16px" data-l="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+    <div class="grid2"><button class="btn ghost" data-l="En una obra">Se quedan en una obra</button><button class="btn ghost" data-l="Prestada">Las he prestado</button></div>`, (s) => {
+    s.querySelectorAll('[data-l]').forEach((b) => (b.onclick = () => {
+      const dest = b.dataset.l; let det = '';
+      if (FUERA.includes(dest)) { det = prompt(dest === 'Prestada' ? '¿A quién se las has dejado?' : '¿En qué obra?', ''); if (det === null) return; }
+      const antes = l.map((h) => [h, h.donde, h.detalle, h.desde]);
+      l.forEach((h) => { if (!FUERA.includes(h.donde) && !h.casa) h.casa = h.donde; h.donde = dest; h.detalle = det; h.desde = FUERA.includes(dest) ? Date.now() : null; });
+      selModo = false; selHerr = new Set(); save(); closeSheet(); render();
+      toast(`${l.length} movidas a ${dest}`, () => { antes.forEach(([h, d, dt, ds]) => { h.donde = d; h.detalle = dt; h.desde = ds; }); save(); });
+    }));
+  });
 };
 
 /* ---------- Salir de casa: coger lo que te llevas ---------- */
