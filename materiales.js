@@ -124,7 +124,7 @@ function checklistMaterial(trabajoId, modo) {
       ok.textContent = ckModo === 'material' ? `Añadir ${ckSel.size || ''} a la lista de compra` : `Guardar ${ckSel.size || ''} en mis herramientas`; }));
     const add = () => { const v = s.querySelector('#ck-nuevo').value.trim(); if (!v) return; const p = plantilla(clave);
       p.ocultos = p.ocultos.filter((x) => x !== v); if (!itemsDeTipo(ckTipo, ckModo).includes(v)) p.extra.push(v); if (!ckEditar) ckSel.add(v); save(); again(); };
-    s.querySelector('#ck-add').onclick = add; s.querySelector('#ck-nuevo').onkeydown = (e) => e.key === 'Enter' && add();
+    s.querySelector('#ck-add').onclick = add; s.querySelector('#ck-nuevo').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } };
     const ok = s.querySelector('#ck-ok'); ok && (ok.onclick = () => {
       if (!ckSel.size) return toast('Marca algo de la lista'); const n = ckSel.size;
       if (ckModo === 'material') ckSel.forEach((nombre) => db.material.push({ id: uid(), nombre, cantidad: '', tienda: 'Obramat', trabajoId: ckTrabajo || null, comprado: false, creado: Date.now() }));

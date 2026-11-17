@@ -67,7 +67,7 @@ window.formLugares = () => {
       return `<div class="item" style="align-items:center"><span class="grow"><span class="t">${esc(l)}</span> <span class="muted">· ${n} cosas</span></span><button class="btn sm light" data-ren="${i}">Renombrar</button><button class="btn sm danger" data-del="${i}" aria-label="Borrar ${esc(l)}">×</button></div>`; }).join('')}</div>
     <div class="row"><input id="lugar-nuevo" placeholder="Nuevo lugar: trastero, caja roja, furgo de Rober…" aria-label="Nuevo lugar" style="flex:1;min-height:46px;border:1.5px solid var(--line2);border-radius:10px;padding:0 12px;background:var(--card)"><button class="btn sm" id="lugar-add">Añadir</button></div>`, (s) => {
     const add = () => { const v = s.querySelector('#lugar-nuevo').value.trim(); if (!v || lugares().includes(v) || FUERA.includes(v)) return; lugares().push(v); save(); formLugares(); render(); };
-    s.querySelector('#lugar-add').onclick = add; s.querySelector('#lugar-nuevo').onkeydown = (e) => e.key === 'Enter' && add();
+    s.querySelector('#lugar-add').onclick = add; s.querySelector('#lugar-nuevo').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } };
     s.querySelectorAll('[data-ren]').forEach((b) => (b.onclick = () => { const i = +b.dataset.ren, viejo = lugares()[i], nuevo = prompt('Nuevo nombre', viejo)?.trim(); if (!nuevo || nuevo === viejo) return;
       lugares()[i] = nuevo; [...db.herramientas, ...db.stock].forEach((x) => { if (x.donde === viejo) x.donde = nuevo; if (x.casa === viejo) x.casa = nuevo; }); save(); formLugares(); render(); }));
     s.querySelectorAll('[data-del]').forEach((b) => (b.onclick = () => { const i = +b.dataset.del, l = lugares()[i]; if (lugares().length < 2) return toast('Tiene que quedar al menos un lugar');
