@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.2.2';
+const VERSION = '0.3.0';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -346,11 +346,12 @@ views.trabajo = (id) => {
     ${tel ? `<a class="btn light sm" href="tel:${esc(tel)}">${ICON.phone}Llamar</a><a class="btn light sm" href="https://wa.me/34${esc(tel.replace(/^\+?34/, ''))}" target="_blank" rel="noopener">${ICON.chat}WhatsApp</a>` : `<button class="btn light sm" onclick="formCliente(cliente('${t.clienteId}')||{})" ${c ? '' : 'disabled'}>Añadir teléfono</button><span></span>`}
     ${t.direccion ? `<a class="btn light sm" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(t.direccion)}" target="_blank" rel="noopener">${ICON.map}Cómo llegar</a>` : ''}
   </div>
+  <div class="grid2"><a class="btn ${t.presu ? 'light' : 'brand'}" href="#presupuesto/${t.id}">${t.presu ? 'Presupuesto · ' + eur(t.importe) + (t.presu.estado === 'aceptado' ? ' ✓' : '') : 'Hacer presupuesto'}</a><a class="btn light" href="#plano/${t.id}">Plano${(t.planos || []).some((p) => p.pts.length) ? 's · ' + t.planos.filter((p) => p.pts.length).length : ''}</a></div>
   ${t.estado !== 'presupuesto' && t.estado !== 'terminado' ? `<section class="timer"><span class="dot" style="${f ? '' : 'background:var(--ink2)'}"></span><div style="flex:1"><div class="muted" style="font-weight:700;${f ? 'color:var(--ok)' : ''}">${f ? 'Trabajando ahora' : 'Horas en este trabajo'}</div><div class="n" data-live="${f ? t.id : ''}">${fmtHoras(r.horas)}</div></div><button class="btn sm ${f ? '' : 'brand'}" onclick="fichar('${t.id}')">${f ? 'Parar' : 'Empezar'}</button></section>` : ''}
   ${t.importe ? `<section class="card"><h2>Cobros · ${esc(t.plan)}</h2>
     <div class="bar-track" style="margin:10px 0">${t.pagos.map((p) => `<span style="flex:${p.pct};background:${p.cobrado ? 'var(--ok)' : 'var(--line2)'}"></span>`).join('')}</div>
     <div class="list">${t.pagos.map((p) => `<label class="item" style="align-items:center"><input type="checkbox" class="chk" ${p.cobrado ? 'checked' : ''} onchange="cobro('${t.id}','${p.id}',this.checked)"><span class="grow">${esc(p.nombre)} · ${p.pct} %</span><b style="color:${p.cobrado ? 'var(--ok)' : 'var(--ink)'}">${eur(p.importe)}</b></label>`).join('')}</div>
-    <div class="muted" style="margin-top:4px">Cobrado ${eur(cobrado)} de ${eur(t.importe)}</div></section>` : `<button class="btn light block" onclick="formTrabajo(trabajo('${t.id}'))">Ponerle precio al trabajo</button>`}
+    <div class="muted" style="margin-top:4px">Cobrado ${eur(cobrado)} de ${eur(t.importe)}</div></section>` : t.presu ? '' : `<button class="btn light block" onclick="formTrabajo(trabajo('${t.id}'))">Ponerle precio a mano (sin presupuesto)</button>`}
   <section class="card"><div class="between"><h2>¿Cuánto te deja?</h2><button class="btn sm light" onclick="formGasto(trabajo('${t.id}'))">+ Gasto</button></div>
     <div style="display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px;margin-top:8px">
       <span class="muted">Precio</span><b>${eur(t.importe)}</b><span class="muted">Gastos</span><b>− ${eur(gastosDe(t))}</b><span class="muted">Horas</span><b>${fmtHoras(r.horas)}</b>
@@ -359,7 +360,7 @@ views.trabajo = (id) => {
     ${(t.gastos || []).length ? `<div class="list" style="margin-top:6px">${t.gastos.map((g) => `<div class="item"><span class="grow">${esc(g.concepto)} <span class="muted">· ${esc(g.tipo)}${t.socio ? ' · pagó ' + esc(g.pagador) : ''}</span></span><b>${eur(g.importe)}</b></div>`).join('')}</div>` : ''}
     ${t.socio ? socioResumen(t) : ''}
   </section>
-  <section class="card"><div class="between"><h2>Material</h2><button class="btn sm light" onclick="formMaterial({trabajoId:'${t.id}'})">+ Material</button></div>
+  <section class="card"><div class="between"><h2>Material</h2><div class="row" style="gap:6px"><button class="btn sm brand" onclick="checklistMaterial('${t.id}')">Lista sugerida</button><button class="btn sm light" onclick="formMaterial({trabajoId:'${t.id}'})">+ Otro</button></div></div>
     <div class="list">${mat.map((m) => `<div class="item"><span class="grow">${esc(m.nombre)} <span class="muted">${esc(m.cantidad || '')}</span></span><span class="chip ${m.comprado ? 'ok' : t.estado === 'presupuesto' ? '' : 'red'}">${m.comprado ? 'Comprado' : t.estado === 'presupuesto' ? 'En espera' : 'Comprar'}</span></div>`).join('') || '<div class="empty">Sin material apuntado.</div>'}</div></section>
   <section class="card"><h2>Notas</h2><textarea aria-label="Notas del trabajo" style="width:100%;min-height:90px;border:1.5px solid var(--line2);border-radius:10px;padding:10px;background:var(--card);margin-top:8px" onchange="trabajo('${t.id}').notas=this.value;save()" placeholder="Medidas, el modelo de grifo que eligió, código del portal…">${esc(t.notas || '')}</textarea></section>`;
 };
@@ -414,6 +415,7 @@ views.material = () => {
   }
   const add = { comprar: 'formMaterial()', stock: 'formStock()', herramientas: 'formHerramienta()' }[tabMaterial];
   return `<header class="top"><h1>Material</h1><button class="btn" onclick="${add}" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Añadir</button></header>
+  ${tabMaterial === 'comprar' ? '<button class="btn brand block" onclick="checklistMaterial()">Lista de material por tipo de chapuza</button>' : ''}
   <div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${tabMaterial === k}" onclick="tabMaterial='${k}';render()">${t}${k === 'comprar' ? ' · ' + db.material.filter((m) => !m.comprado).length : ''}</button>`).join('')}</div>${body}`;
 };
 window.comprado = (id) => { const m = db.material.find((x) => x.id === id); m.comprado = true; m.compradoEn = Date.now(); save(); render(); toast('Comprado', () => { m.comprado = false; save(); }); };
@@ -440,7 +442,7 @@ views.cuentas = () => {
 
 views.menu = () => `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button>${chispasIcon(52)}<div><div style="font-family:Fredoka,sans-serif;font-size:32px;font-weight:700;line-height:1">Chispas</div><div class="muted">Tus chapuzas, bajo control</div></div></header>
   <section class="card list">
-    ${[['#cuenta', 'Tu cuenta', window.cloud?.user ? cloud.user.email + ' · ' + cloud.estado : 'Sin cuenta: los datos solo están en este móvil'], ['#clientes', 'Clientes', `${db.clientes.length} guardados`], ['#catalogo', 'Catálogo de precios', `${db.catalogo.filter((c) => c.precio == null).length ? 'Te faltan ' + db.catalogo.filter((c) => c.precio == null).length + ' por poner' : 'Completo'}`],
+    ${[['#cuenta', 'Tu cuenta', window.cloud?.user ? cloud.user.email + ' · ' + cloud.estado : 'Sin cuenta: los datos solo están en este móvil'], ['#clientes', 'Clientes', `${db.clientes.length} guardados`], ['javascript:formNegocio()', 'Tus datos para presupuestos', db.ajustes.negocio?.nombre ? db.ajustes.negocio.nombre + ' · ' + (db.ajustes.negocio.tel || '') : 'Nombre y teléfono que salen en el PDF'], ['#catalogo', 'Catálogo de precios', `${db.catalogo.filter((c) => c.precio == null).length ? 'Te faltan ' + db.catalogo.filter((c) => c.precio == null).length + ' por poner' : 'Completo'}`],
        ['#copia', 'Copia de seguridad', db.ajustes.ultimaCopia ? 'Última: ' + fmtWhen(db.ajustes.ultimaCopia) : 'Todavía no has hecho ninguna'], ['#avisos', 'Avisos en el móvil', 'Permisos y prueba'],
        ['#apariencia', 'Apariencia', { auto: 'Automático (como el móvil)', claro: 'Claro', oscuro: 'Oscuro' }[db.ajustes.tema]], ['#voz', 'Voz', 'Qué le puedes decir'], ['javascript:actualizar()', 'Buscar actualización', 'Tienes la versión ' + VERSION]]
       .map(([h, t, s]) => `<a class="item" href="${h}" style="text-decoration:none;color:inherit;align-items:center"><div class="grow"><div class="t">${t}</div><div class="muted">${esc(s)}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>`).join('')}
@@ -580,7 +582,7 @@ window.render = function render() {
   const [route, arg] = (location.hash.slice(1) || 'inicio').split('/');
   const v = views[route] || views.inicio;
   $('#view').innerHTML = v(arg);
-  const tab = { trabajo: 'trabajos', preparar: 'trabajos' }[route] || route;
+  const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos' }[route] || route;
   document.querySelectorAll('.nav a').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
 };
 window.addEventListener('hashchange', () => { closeSheet(); render(); window.scrollTo(0, 0); });

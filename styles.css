@@ -110,7 +110,8 @@ h2{font-size:22px}
 .sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:30}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;max-height:92vh;overflow:auto;background:var(--card);border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 .sheet .grip{width:40px;height:5px;border-radius:3px;background:var(--line2);align-self:center}
-.field{display:flex;flex-direction:column;gap:4px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field input,.field select{width:100%;min-width:0}
 .field label{font-size:13px;font-weight:600;color:var(--ink2)}
 .field input,.field select,.field textarea{min-height:46px;border:1.5px solid var(--line2);border-radius:10px;padding:0 12px;background:var(--card);font-size:16px}
 .field textarea{padding:10px 12px;min-height:80px}
