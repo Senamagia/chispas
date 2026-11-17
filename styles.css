@@ -13,7 +13,7 @@
   color-scheme: dark;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
+html,body{margin:0;height:100%;overscroll-behavior-y:none}
 body{background:var(--bg);color:var(--ink);font-family:Barlow,system-ui,sans-serif;font-size:16px;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--link)}

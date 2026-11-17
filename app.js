@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.4.1';
+const VERSION = '0.4.2';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -80,6 +80,9 @@ applyTheme();
 /* ---------- Bienvenida (3 s) ---------- */
 (function splash() {
   const el = $('#splash');
+  // La bombilla solo al abrir la app, no al recargar ni al actualizar
+  let visto = false; try { visto = sessionStorage.getItem('chispas.splash') === '1'; sessionStorage.setItem('chispas.splash', '1'); } catch {}
+  if (visto) { el.remove(); $('#app').hidden = false; setTimeout(() => { if (window.cloud?.ready && !cloud.user && !db.ajustes.sinCuenta) location.hash = '#cuenta'; }, 900); return; }
   $('#splash-guy').innerHTML = `<svg viewBox="0 0 200 240" role="img" aria-label="El monigote Chispas enciende su bombilla y saluda">${chispasGuy({ anim: true })}</svg>`;
   const hoy = db.trabajos.filter((t) => sameDay(t.cuando, new Date())).length;
   const pend = db.tareas.filter((t) => !t.hecha).length;
