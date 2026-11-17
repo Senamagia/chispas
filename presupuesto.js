@@ -56,7 +56,6 @@ views.presupuesto = (id) => {
   <div id="lineas" style="display:flex;flex-direction:column;gap:8px">${p.lineas.map(fila).join('') || '<div class="card empty">Añade partidas desde tu catálogo de precios, a mano o desde un plano.</div>'}</div>
   <div class="grid2"><button class="btn light" onclick="desdeCatalogo('${t.id}')">+ Del catálogo</button><button class="btn light" onclick="nuevaLinea('${t.id}','mano')">+ Partida libre</button>
     <button class="btn light" onclick="nuevaLinea('${t.id}','material')">+ Material</button><button class="btn light" onclick="location.hash='#plano/${t.id}'">+ Desde plano</button></div>
-  ${db.material.some((m) => m.trabajoId === t.id && m.precio) ? `<button class="btn ghost block" onclick="traerMaterial('${t.id}')">Traer el material apuntado en el trabajo</button>` : ''}
   <section class="card" style="display:flex;flex-direction:column;gap:10px">
     <div class="between"><b>Margen al material</b><span class="muted">te cuesta ${eur(T.matCoste)}</span></div>
     <div class="pills">${[0, 10, 15, 20, 30].map((m) => `<button aria-pressed="${(p.margen || 0) === m}" onclick="presuSet('${t.id}','margen',${m})">${m} %</button>`).join('')}</div>

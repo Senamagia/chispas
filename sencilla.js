@@ -66,7 +66,7 @@ let vistaTrab = 'lista', filtroT = 'marcha';
 const vistaCuentas = views.cuentas;
 views.cuentas = () => { vistaTrab = 'renta'; return views.trabajos(); };
 views.trabajos = () => {
-  const cab = `<header class="top"><h1>Trabajos</h1><button class="btn" onclick="nuevoTrabajo()" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Nuevo</button></header>
+  const cab = `<header class="top"><h1>Trabajos</h1><button class="btn add" onclick="nuevoTrabajo()">${ICON.plus}Nuevo</button></header>
   <div class="tabs" role="tablist">${[['lista', 'Trabajos'], ['renta', 'Lo que me renta']].map(([k, n]) => `<button role="tab" aria-selected="${vistaTrab === k}" onclick="vistaTrab='${k}';render()">${n}</button>`).join('')}</div>`;
   if (vistaTrab === 'renta') { const h = vistaCuentas(); return cab + h.slice(h.indexOf('</header>') + 9); }
   const F = { marcha: (t) => t.estado === 'en_curso' || t.estado === 'por_cobrar', presupuestos: (t) => t.estado === 'presupuesto', hechos: (t) => t.estado === 'terminado' };
@@ -138,15 +138,18 @@ views.presupuesto = (id) => {
 /* ---------- Ficha · Material (lo que hay que comprar y llevar) ---------- */
 views.preparar = (id) => {
   const t = trabajo(id); if (!t) return '';
-  const ofs = t.oficios || [], mat = db.material.filter((m) => m.trabajoId === t.id);
+  const ofs = t.oficios || [], mat = db.material.filter((m) => m.trabajoId === t.id && !m.herramienta), porComprar = db.material.filter((m) => m.trabajoId === t.id && m.herramienta);
   const herr = db.herramientas.filter((h) => !esBat(h) && ofs.length && (h.oficios || []).some((o) => ofs.includes(o)));
   const tag = (h) => esFuera(h) ? `<span class="chip red">${esc(h.detalle || h.donde)}</span>` : `<span class="chip">${esc(h.donde)}</span>`;
   return `${cabeceraTrabajo(t, 'preparar')}
   <section class="card"><div class="between"><h2>Material</h2><span class="muted">${mat.filter((m) => !m.comprado).length} por comprar</span></div>
     <div class="list">${mat.map((m) => `<div class="item" style="align-items:center"><input type="checkbox" class="chk" aria-label="Comprado" ${m.comprado ? 'checked' : ''} onchange="matComprado('${m.id}',this.checked)"><div class="grow" onclick="formMaterial(db.material.find(x=>x.id==='${m.id}'))"><div class="t" ${m.comprado ? 'style="text-decoration:line-through;color:var(--ink2)"' : ''}>${esc(m.nombre)} <span class="muted">${esc(m.cantidad || '')}</span></div><div class="muted">${m.comprado ? 'Comprado' : t.estado === 'presupuesto' ? 'En espera: aún no está aceptado' : esc(m.tienda || 'Comprar')}</div></div></div>`).join('') || '<div class="empty">Sin material apuntado. Toca «Lista sugerida» y marca lo que haga falta.</div>'}</div>
-    <div class="grid2" style="margin-top:8px"><button class="btn brand" onclick="checklistMaterial('${t.id}')">Lista sugerida</button><button class="btn light" onclick="formMaterial({trabajoId:'${t.id}'})">+ Otra cosa</button></div></section>
+    <div class="grid2" style="margin-top:8px"><button class="btn brand" onclick="checklistMaterial('${t.id}')">Lista sugerida</button><button class="btn light" onclick="formMaterial({trabajoId:'${t.id}'})">+ Otra cosa</button></div>
+    ${mat.length ? `<button class="btn light block" style="margin-top:8px" onclick="listaAPresupuesto('${t.id}')">Pasar al presupuesto</button>` : ''}</section>
   <section class="card"><div class="between"><h2>Herramientas</h2>${ofs.length ? `<span class="muted">${esc(ofs.join(', '))}</span>` : ''}</div>
     ${herr.length ? `<div class="list">${herr.map((h) => `<div class="item" style="align-items:center"><span class="grow t">${esc(h.nombre)}</span>${tag(h)}</div>`).join('')}</div>` : `<div class="empty">${ofs.length ? 'No tienes herramientas apuntadas para ' + esc(ofs.join(', ')) + '.' : 'Edita el trabajo y marca sus oficios: aquí saldrán las herramientas que te hacen falta.'}</div>`}
+    ${porComprar.length ? `<div style="margin-top:10px"><b>Hay que comprar</b><div class="list">${porComprar.map((m) => `<div class="item" style="align-items:center"><input type="checkbox" class="chk" aria-label="Comprada" ${m.comprado ? 'checked' : ''} onchange="matComprado('${m.id}',this.checked)"><span class="grow t" ${m.comprado ? 'style="text-decoration:line-through;color:var(--ink2)"' : ''}>${esc(m.nombre)}</span><span class="chip ${m.comprado ? 'ok' : 'warn'}">${m.comprado ? 'Comprada' : esc(m.tienda || 'Comprar')}</span></div>`).join('')}</div></div>` : ''}
+    <div class="grid2" style="margin-top:8px"><button class="btn light" onclick="checklistHerramientas('${t.id}')">Sugeridas</button><button class="btn light" onclick="herrComprar('${t.id}')">+ Comprar una</button></div>
     <a class="btn block" href="#salida" style="margin-top:8px">Salir de casa: ¿qué me llevo?</a></section>`;
 };
 window.terminarTrabajo = (id) => { const t = trabajo(id), abierto = (t.horas || []).find((h) => !h.fin); if (abierto) abierto.fin = Date.now();

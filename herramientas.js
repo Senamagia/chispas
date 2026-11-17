@@ -103,7 +103,7 @@ const tile = (h, extra = '') => `<button class="tool-tile ${selModo && selHerr.h
 
 /* ---------- Pestaña Herramientas de Material ---------- */
 views.herramientas = () => {
-  const cabecera = `<header class="top"><h1>Herramientas</h1><button class="btn" onclick="formHerramienta()" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Añadir</button></header>`;
+  const cabecera = `<header class="top"><h1>Herramientas</h1><button class="btn add" onclick="formHerramienta()">${ICON.plus}Añadir</button></header>`;
   const fuera = db.herramientas.filter(esFuera), bats = db.herramientas.filter((h) => esBat(h) && !esFuera(h));
   const vacias = bats.filter((h) => h.tipo === 'bateria' && h.carga === 'vacia').length;
   const porLugar = lugares().map((l) => [l, db.herramientas.filter((h) => h.donde === l && !esBat(h))]).filter(([, l]) => l.length);

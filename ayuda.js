@@ -39,14 +39,16 @@ const MANUAL = [
     'Las listas se pueden editar: quita lo que nunca usas, añade lo tuyo o crea listas nuevas. Se quedan guardadas.',
     '<b>Compra › Por comprar</b> agrupa por tienda. Marca cada cosa cuando la compres.',
     'Lo de un presupuesto sin aceptar sale «En espera»: no lo compres todavía.',
-    '<b>Compra › Lo que tengo</b> es tu almacén. Ponle un mínimo y te avisa cuando quede poco con el botón «Reponer».']],
+    '<b>Compra › Lo que tengo</b> es tu almacén. Ponle un mínimo y te avisa cuando quede poco con el botón «Reponer».',
+    'Material y presupuesto van unidos: en la pestaña Material, <b>Pasar al presupuesto</b> lleva lo apuntado al presupuesto (pones cuánto te cuesta y el margen se suma solo). En el Presupuesto, <b>Mandar a la lista</b> hace lo contrario. Lo que ya está pasado sale como «Ya está», así no se duplica.']],
   ['Herramientas', 'herramientas', [
     'Toca cualquier herramienta para cambiarla de sitio (coche, armario, maletín…). Tus sitios se cambian en «Mis lugares».',
     '<b>Seleccionar varias</b> sirve para mover muchas de golpe.',
     '<b>Salir de casa</b>: toca las que coges y pulsa «Me llevo». Si hay obra hoy o mañana, te marca las que suele necesitar ese oficio.',
     'Al volver, «He vuelto» las devuelve todas a su sitio de siempre.',
     'Si prestas una o se queda en una obra, sale en Pendiente y te avisa a la semana.',
-    'Las baterías y cargadores tienen su apartado: toca la carga para ponerla llena, a medias o vacía.']],
+    'Las baterías y cargadores tienen su apartado: toca la carga para ponerla llena, a medias o vacía.',
+    'Si para un trabajo te falta una herramienta, en la pestaña Material del trabajo toca <b>+ Comprar una</b> (o «Hay que comprarlas» en las sugeridas). Va a la lista de compra y, al marcarla comprada, se guarda sola en tus herramientas. Puedes cobrársela al cliente en el presupuesto.']],
   ['Plano', 'plano', [
     '<b>Medidas</b>: pones largo, ancho y alto, y calcula suelo, paredes y techo.',
     '<b>Cuadrícula</b>: toca cada esquina de la habitación, una detrás de otra. Las paredes salen rectas. Toca el punto amarillo para cerrar.',

@@ -108,7 +108,8 @@ function checklistMaterial(trabajoId, modo) {
     <div class="list">${items.map(fila).join('') || '<div class="empty">Lista vacía: añade lo que uses.</div>'}</div>
     <div class="row"><input id="ck-nuevo" placeholder="${ckModo === 'material' ? 'Añadir otro material…' : 'Añadir otra herramienta…'}" aria-label="Añadir a la lista" style="flex:1;min-height:46px;border:1.5px solid var(--line2);border-radius:10px;padding:0 12px;background:var(--card)"><button class="btn sm" id="ck-add">Añadir</button></div>
     ${ckEditar ? `<button class="btn sm light" data-restaurar style="align-self:center">Restaurar la lista original</button>${tipo?.propio ? '<button class="btn sm danger" data-borrarlista style="align-self:center">Borrar esta lista</button>' : ''}` : `<div class="muted">Lo que añadas se queda guardado en esta lista para la próxima vez.</div>
-    <button class="btn brand block" id="ck-ok">${ckModo === 'material' ? `Añadir ${ckSel.size || ''} a la lista de compra` : `Guardar ${ckSel.size || ''} en mis herramientas`}</button>`}`, (s) => {
+    <button class="btn brand block" id="ck-ok">${ckModo === 'material' ? `Añadir ${ckSel.size || ''} a la lista de compra` : `Ya las tengo: guardar ${ckSel.size || ''}`}</button>
+    ${ckModo === 'herr' ? `<button class="btn light block" id="ck-comprar">Hay que comprarlas${ckTrabajo && trabajo(ckTrabajo) ? ' para este trabajo' : ''}</button>` : ''}`}`, (s) => {
     const again = () => checklistMaterial(ckTrabajo);
     s.querySelectorAll('[data-modo]').forEach((b) => (b.onclick = () => checklistMaterial(ckTrabajo, b.dataset.modo)));
     const sel = s.querySelector('#f-ckTrabajo'); sel && (sel.onchange = () => { ckTrabajo = sel.value || null; again(); });
@@ -121,7 +122,10 @@ function checklistMaterial(trabajoId, modo) {
     const rest = s.querySelector('[data-restaurar]'); rest && (rest.onclick = () => { const p = plantilla(clave); p.ocultos = []; save(); again(); });
     const bl = s.querySelector('[data-borrarlista]'); bl && (bl.onclick = () => { if (!confirm('¿Borrar esta lista?')) return; db.tiposPropios = db.tiposPropios.filter((x) => x.id !== ckTipo); ckTipo = null; ckEditar = false; save(); again(); });
     s.querySelectorAll('[data-n]').forEach((c) => (c.onchange = () => { c.checked ? ckSel.add(c.dataset.n) : ckSel.delete(c.dataset.n); const ok = s.querySelector('#ck-ok');
-      ok.textContent = ckModo === 'material' ? `Añadir ${ckSel.size || ''} a la lista de compra` : `Guardar ${ckSel.size || ''} en mis herramientas`; }));
+      ok.textContent = ckModo === 'material' ? `Añadir ${ckSel.size || ''} a la lista de compra` : `Ya las tengo: guardar ${ckSel.size || ''}`; }));
+    const cc = s.querySelector('#ck-comprar'); cc && (cc.onclick = () => { if (!ckSel.size) return toast('Marca las que tienes que comprar'); const n = ckSel.size;
+      ckSel.forEach((nombre) => db.material.push({ id: uid(), nombre, cantidad: '', precio: null, tienda: 'Leroy Merlin', trabajoId: ckTrabajo || null, comprado: false, creado: Date.now(), herramienta: true }));
+      ckSel = new Set(); save(); closeSheet(); render(); toast(`${n} ${n === 1 ? 'herramienta apuntada' : 'herramientas apuntadas'} para comprar`); });
     const add = () => { const v = s.querySelector('#ck-nuevo').value.trim(); if (!v) return; const p = plantilla(clave);
       p.ocultos = p.ocultos.filter((x) => x !== v); if (!itemsDeTipo(ckTipo, ckModo).includes(v)) p.extra.push(v); if (!ckEditar) ckSel.add(v); save(); again(); };
     s.querySelector('#ck-add').onclick = add; s.querySelector('#ck-nuevo').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } };

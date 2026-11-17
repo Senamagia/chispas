@@ -8,7 +8,7 @@
 }
 :root[data-theme="dark"]{
   --bg:#0F141B; --card:#1A212B; --raise:#263140; --ink:#E9EDF2; --ink2:#A3ADBA; --line:#2B3542; --line2:#3A4656; --track:#232C38;
-  --primary:#FFC20E; --on-primary:#0F141B;
+  --primary:#E9EDF2; --on-primary:#0F141B;
   --red:#FF8A80; --red-bg:#3A1D1D; --warn:#FFB27A; --warn-bg:#3A2614; --ok:#6FD394; --ok-bg:#15301F; --link:#8AB4FF;
   color-scheme: dark;
 }
@@ -148,6 +148,10 @@ details>summary::after{content:'+';margin-left:auto;font-size:24px;color:var(--i
 .btn:disabled{opacity:1;background:var(--line2);color:var(--ink2);box-shadow:none}
 .btn.sm{white-space:nowrap}
 .kpis .n{font-size:clamp(18px,6vw,26px);white-space:nowrap}
-.top h1{font-size:clamp(26px,8.4vw,34px);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top h1{font-size:clamp(24px,7.4vw,34px);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .top>.btn,.top>.row{flex-shrink:0}
 #view .pills[style*="wrap"],.pills.wrap{flex-wrap:wrap}
+/* Botón «Añadir/Nuevo» de las cabeceras: oscuro en claro, contorno en oscuro (el amarillo queda para la acción principal) */
+.btn.add{padding:0 14px;flex-shrink:0}
+.btn.add svg{stroke:var(--brand)}
+:root[data-theme="dark"] .btn.add{background:var(--raise);color:var(--ink);border:1.5px solid var(--line2)}

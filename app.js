@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.5.2';
+const VERSION = '0.5.3';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -300,7 +300,7 @@ views.inicio = () => {
   <header class="top">
     <div class="top-left"><button class="logo-btn" onclick="location.hash='#menu'" aria-label="Abrir menú">${chispasIcon(48)}</button>
       <div><div class="muted">${now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1 style="font-size:28px;white-space:nowrap">Buenas, Chispas</h1></div></div>
-    <button class="btn" onclick="nuevo()" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Nuevo</button>
+    <button class="btn add" onclick="nuevo()">${ICON.plus}Nuevo</button>
   </header>
   ${f ? `<a class="timer" href="#trabajo/${f.id}" style="text-decoration:none;color:inherit"><span class="dot"></span><div style="flex:1"><div class="muted" style="color:var(--ok);font-weight:700">Trabajando · ${esc(f.titulo)}</div><div class="n" data-live="${f.id}">${fmtHoras(horasDe(f))}</div></div><span class="btn sm">Ver</span></a>` : ''}
   <section class="card">
@@ -334,7 +334,7 @@ views.trabajos = () => {
   const f = { activos: (t) => t.estado === 'en_curso' || t.estado === 'por_cobrar', presupuestos: (t) => t.estado === 'presupuesto', cobrar: (t) => t.importe && cobradoDe(t) < t.importe && t.estado !== 'presupuesto', terminados: (t) => t.estado === 'terminado' };
   const list = db.trabajos.filter(f[filtroTrabajos]).sort((a, b) => (b.cuando || b.creado) - (a.cuando || a.creado));
   const n = (k) => db.trabajos.filter(f[k]).length;
-  return `<header class="top"><h1>Trabajos</h1><button class="btn" onclick="formTrabajo()" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Nuevo</button></header>
+  return `<header class="top"><h1>Trabajos</h1><button class="btn add" onclick="formTrabajo()">${ICON.plus}Nuevo</button></header>
   <div class="pills" role="tablist">${[['activos', 'Activos'], ['presupuestos', 'Presupuestos'], ['cobrar', 'Por cobrar'], ['terminados', 'Terminados']].map(([k, t]) => `<button aria-pressed="${filtroTrabajos === k}" onclick="filtroTrabajos='${k}';render()">${t} · ${n(k)}</button>`).join('')}</div>
   ${list.map((t) => { const pend = (t.importe || 0) - cobradoDe(t); const chip = t.estado === 'terminado' ? 'ok' : t.estado === 'por_cobrar' ? 'warn' : t.estado === 'en_curso' ? 'ink' : '';
     return `<a class="card" href="#trabajo/${t.id}" style="text-decoration:none;color:inherit;display:block"><div class="between"><div><div class="t" style="font-weight:700;font-size:16px">${esc(t.titulo)}</div><div class="muted">${esc(cliente(t.clienteId)?.nombre || 'Sin cliente')}${t.socio ? ' · con ' + esc(t.socio) : ''}</div></div><span class="chip ${chip}">${ESTADOS[t.estado]}</span></div>
@@ -407,7 +407,7 @@ views.material = () => {
     const pend = db.material.filter((m) => !m.comprado);
     const espera = pend.filter((m) => trabajo(m.trabajoId)?.estado === 'presupuesto'), compra = pend.filter((m) => !espera.includes(m));
     const porTienda = TIENDAS.map((ti) => [ti, compra.filter((m) => m.tienda === ti)]).filter(([, l]) => l.length);
-    body = porTienda.map(([ti, l]) => `<section class="card"><div class="between"><h2>${ti}</h2><span class="muted">${l.length} · ~${eur(l.reduce((s, m) => s + (m.precio || 0), 0))}</span></div><div class="list">${l.map((m) => `<div class="item"><input type="checkbox" class="chk" aria-label="Comprado" onchange="comprado('${m.id}')"><div class="grow" onclick="formMaterial(db.material.find(x=>x.id==='${m.id}'))"><div class="t">${esc(m.nombre)} <span class="muted">${esc(m.cantidad || '')}</span></div><div class="muted">${m.trabajoId ? esc(nombreTrabajo(trabajo(m.trabajoId))) : 'Para reponer'}</div></div>${m.precio ? `<b>${eur(m.precio)}</b>` : ''}</div>`).join('')}</div></section>`).join('')
+    body = porTienda.map(([ti, l]) => `<section class="card"><div class="between"><h2>${ti}</h2><span class="muted">${l.length} · ~${eur(l.reduce((s, m) => s + (m.precio || 0), 0))}</span></div><div class="list">${l.map((m) => `<div class="item"><input type="checkbox" class="chk" aria-label="Comprado" onchange="comprado('${m.id}')"><div class="grow" onclick="formMaterial(db.material.find(x=>x.id==='${m.id}'))"><div class="t">${esc(m.nombre)} <span class="muted">${esc(m.cantidad || '')}</span>${m.herramienta ? ' <span class="chip warn">Herramienta</span>' : ''}</div><div class="muted">${m.trabajoId ? esc(nombreTrabajo(trabajo(m.trabajoId))) : 'Para reponer'}</div></div>${m.precio ? `<b>${eur(m.precio)}</b>` : ''}</div>`).join('')}</div></section>`).join('')
       + (espera.length ? `<section class="card"><h2>En espera</h2><div class="muted" style="margin-bottom:4px">No lo compres: el presupuesto aún no está aceptado.</div><div class="list">${espera.map((m) => `<div class="item"><span class="grow">${esc(m.nombre)} <span class="muted">· ${esc(nombreTrabajo(trabajo(m.trabajoId)))}</span></span></div>`).join('')}</div></section>` : '')
       || '<div class="card empty">No te falta nada por comprar.</div>';
   } else if (tabMaterial === 'stock') {
@@ -423,7 +423,7 @@ views.material = () => {
     body = (fuera.length ? block(['', fuera.flatMap(([, l]) => l)], true) : '') + dentro.map((g) => block(g)).join('') || '<div class="card empty">Apunta tus herramientas y dónde están (coche, armario, maletín). Si prestas una o se queda en una obra, te lo recuerdo.</div>';
   }
   const add = { comprar: 'formMaterial()', stock: 'formStock()' }[tabMaterial];
-  return `<header class="top"><h1>Compra</h1><button class="btn" onclick="${add}" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Añadir</button></header>
+  return `<header class="top"><h1>Compra</h1><button class="btn add" onclick="${add}">${ICON.plus}Añadir</button></header>
   ${tabMaterial === 'comprar' ? '<button class="btn brand block" onclick="checklistMaterial()">Lista de material por tipo de chapuza</button>' : ''}
   <div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${tabMaterial === k}" onclick="tabMaterial='${k}';render()">${t}${k === 'comprar' ? ' · ' + db.material.filter((m) => !m.comprado).length : ''}</button>`).join('')}</div>${body}`;
 };
