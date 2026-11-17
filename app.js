@@ -33,7 +33,7 @@ function emptyDB() {
 }
 let db;
 try { db = JSON.parse(localStorage.getItem(KEY)) || emptyDB(); } catch { db = emptyDB(); }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { toast('No se pudo guardar: memoria llena'); } }
+function save() { db.ajustes.modificado = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { toast('No se pudo guardar: memoria llena'); } window.cloud?.onSave?.(); }
 
 /* ---------- Utilidades ---------- */
 const $ = (s, el = document) => el.querySelector(s);
@@ -85,7 +85,8 @@ applyTheme();
     ? `¡Buenas! Hoy tienes <b>${hoy} ${hoy === 1 ? 'obra' : 'obras'}</b> y <b>${pend} ${pend === 1 ? 'cosa' : 'cosas'}</b> que no olvidar.`
     : '¡Buenas! Vamos a por el día.';
   let done = false;
-  const go = () => { if (done) return; done = true; el.classList.add('out'); $('#app').hidden = false; setTimeout(() => el.remove(), 400); };
+  const go = () => { if (done) return; done = true; el.classList.add('out'); $('#app').hidden = false; setTimeout(() => el.remove(), 400);
+    setTimeout(() => { if (window.cloud?.ready && !cloud.user && !db.ajustes.sinCuenta) location.hash = '#cuenta'; }, 900); };
   el.addEventListener('click', go); el.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && go());
   setTimeout(go, 3000);
 })();
@@ -438,11 +439,11 @@ views.cuentas = () => {
 
 views.menu = () => `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button>${chispasIcon(52)}<div><div style="font-family:Fredoka,sans-serif;font-size:32px;font-weight:700;line-height:1">Chispas</div><div class="muted">Tus chapuzas, bajo control</div></div></header>
   <section class="card list">
-    ${[['#clientes', 'Clientes', `${db.clientes.length} guardados`], ['#catalogo', 'Catálogo de precios', `${db.catalogo.filter((c) => c.precio == null).length ? 'Te faltan ' + db.catalogo.filter((c) => c.precio == null).length + ' por poner' : 'Completo'}`],
+    ${[['#cuenta', 'Tu cuenta', window.cloud?.user ? cloud.user.email + ' · ' + cloud.estado : 'Sin cuenta: los datos solo están en este móvil'], ['#clientes', 'Clientes', `${db.clientes.length} guardados`], ['#catalogo', 'Catálogo de precios', `${db.catalogo.filter((c) => c.precio == null).length ? 'Te faltan ' + db.catalogo.filter((c) => c.precio == null).length + ' por poner' : 'Completo'}`],
        ['#copia', 'Copia de seguridad', db.ajustes.ultimaCopia ? 'Última: ' + fmtWhen(db.ajustes.ultimaCopia) : 'Todavía no has hecho ninguna'], ['#avisos', 'Avisos en el móvil', 'Permisos y prueba'],
        ['#apariencia', 'Apariencia', { auto: 'Automático (como el móvil)', claro: 'Claro', oscuro: 'Oscuro' }[db.ajustes.tema]], ['#voz', 'Voz', 'Qué le puedes decir']]
       .map(([h, t, s]) => `<a class="item" href="${h}" style="text-decoration:none;color:inherit;align-items:center"><div class="grow"><div class="t">${t}</div><div class="muted">${esc(s)}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>`).join('')}
-  </section><div class="muted" style="text-align:center">Chispas v0.1</div>`;
+  </section><div class="muted" style="text-align:center">Chispas v0.2</div>`;
 
 let oficioCat = 'Electricidad';
 views.catalogo = () => {
@@ -481,11 +482,37 @@ views.avisos = () => {
     <li>Ajustes › Aplicaciones › <b>Chrome</b> › Batería › <b>Sin restricciones</b>.</li>
     <li>Haz lo mismo con <b>Chispas</b> si aparece en la lista.</li>
     <li>Ajustes › Batería › Límites de uso en segundo plano › <b>Aplicaciones que nunca se suspenden</b> › añade Chrome y Chispas.</li></ol></section>
-  <div class="tip">Por ahora los avisos salen con la app abierta o en segundo plano. Los avisos programados (aunque no abras la app) llegan cuando conectemos la nube.</div>`;
+  <section class="card" style="display:flex;flex-direction:column;gap:10px"><h2>Avisos aunque no abras la app</h2>
+    ${window.cloud?.user ? `<div class="muted">Te avisamos de lo que no debes olvidar, la tarde antes de cada obra a las 20:00 y si una herramienta prestada lleva una semana fuera.</div>
+      <button class="btn block ${cloud.avisosOk ? 'light' : 'brand'}" onclick="cloud.activarAvisos()">${cloud.avisosOk ? 'Avisos activados en este móvil ✓' : 'Activar avisos en este móvil'}</button>`
+      : '<div class="tip">Para recibirlos tienes que entrar con tu cuenta.</div><a class="btn block" href="#cuenta">Entrar o crear cuenta</a>'}
+  </section>`;
 };
 window.pedirAvisos = async () => { await Notification.requestPermission(); render(); };
 window.probarAviso = async () => { const reg = await navigator.serviceWorker?.getRegistration(); const o = { body: '¡Así te llegarán los avisos!', icon: 'icons/icon-192.png', badge: 'icons/badge-96.png' };
   reg ? reg.showNotification('Chispas', o) : new Notification('Chispas', o); };
+
+views.cuenta = () => {
+  const c = window.cloud;
+  if (c?.user) return `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><h1>Tu cuenta</h1></header>
+  <section class="card" style="display:flex;flex-direction:column;gap:8px"><div class="muted">Has entrado como</div><div class="t" style="font-size:18px;font-weight:700">${esc(c.user.email)}</div>
+  <span class="chip ${/Sincronizado/.test(c.estado) ? 'ok' : 'warn'}" style="align-self:flex-start">${esc(c.estado)}</span>
+  <div class="muted">Tus datos se guardan en tu cuenta. Si cambias de móvil o lo pierdes, entra con tu correo y contraseña y lo tendrás todo.</div></section>
+  <a class="btn light block" href="#avisos">Avisos en este móvil</a>
+  <button class="btn danger block" onclick="cloud.salir()">Cerrar sesión</button>`;
+  return `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><h1>Tu cuenta</h1></header>
+  <div class="row" style="justify-content:center;padding:6px 0">${chispasIcon(72)}</div>
+  <section class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="muted">Entra con tu correo para guardar tus datos en la nube, usarlos en otro móvil y recibir avisos aunque no abras la app.</div>
+    ${field('email', 'Correo', '', 'email', 'autocomplete="email" inputmode="email"')}
+    ${field('pass', 'Contraseña', '', 'password', 'autocomplete="current-password" minlength="6"')}
+    <button class="btn block" onclick="cloud.entrar($('#f-email').value.trim(), $('#f-pass').value)">Entrar</button>
+    <button class="btn ghost block" onclick="cloud.crear($('#f-email').value.trim(), $('#f-pass').value)">Crear cuenta nueva</button>
+    <button class="btn sm light" style="align-self:center" onclick="cloud.olvido($('#f-email').value.trim())">He olvidado la contraseña</button>
+  </section>
+  ${!c ? '<div class="tip">No se ha podido conectar con la nube. Revisa la cobertura y vuelve a abrir la app.</div>' : ''}
+  <button class="btn sm light" style="align-self:center" onclick="db.ajustes.sinCuenta=true;save();location.hash='#inicio'">Seguir sin cuenta (solo en este móvil)</button>`;
+};
 
 views.voz = () => `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><h1>Voz</h1></header>
   <section class="card"><h2>Toca el micrófono amarillo y di…</h2><div class="list" style="margin-top:6px">

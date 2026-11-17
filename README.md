@@ -4,7 +4,7 @@ App para gestionar chapuzas de obra: trabajos, cobros, material, herramientas, c
 
 - Se instala en Android desde Chrome (es una app web instalable, sin tienda).
 - Funciona sin cobertura: todo se guarda en el móvil.
-- Versión 0.1. Lo siguiente: nube (Firebase), avisos programados y presupuestos en PDF.
+- Versión 0.2: cuenta con correo y contraseña, sincronización entre móviles (Firebase, proyecto `chispas-25f9c`) y avisos programados.
 
 ## Instalar en el móvil
 1. Abrir el enlace de la app con **Chrome**.
@@ -19,3 +19,9 @@ App para gestionar chapuzas de obra: trabajos, cobros, material, herramientas, c
 - `logo.js`: el monigote bombilla
 - `sw.js`: funcionamiento sin conexión y avisos
 - `manifest.webmanifest` + `icons/`: icono e instalación
+
+## Nube y avisos
+- `firebase-config.js` y `cloud.js`: cuenta, sincronización y avisos.
+- Firestore: `users/{uid}` (datos de cada persona), `avisos/{id}` (cola de avisos), `tokens/{token}` (móviles que reciben avisos).
+- `hoja-avisos/`: script de Google Apps Script que va en una hoja de la cuenta de Chispas. Envía los avisos cada 5 minutos y copia sus datos en la hoja cada noche.
+  Para que funcione, el correo de esa cuenta tiene que ser miembro (Editor) del proyecto de Firebase.
