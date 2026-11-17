@@ -10,6 +10,7 @@ const ENLACE_APP = 'https://senamagia.github.io/chispas/';
 
 /* ---------- Instalación ---------- */
 function instalar() {
+  SpreadsheetApp.getActive().setSpreadsheetTimeZone('Europe/Madrid');
   ScriptApp.getProjectTriggers().forEach((t) => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('enviarAvisos').timeBased().everyMinutes(5).create();
   ScriptApp.newTrigger('copiarDatos').timeBased().everyDays(1).atHour(23).create();
