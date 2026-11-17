@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.5.3';
+const VERSION = '0.6.0';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -62,7 +62,9 @@ const ICON = {
 
 /* ---------- Horas trabajadas ---------- */
 const horasDe = (t) => (t.horas || []).reduce((s, h) => s + ((h.fin || Date.now()) - h.inicio), 0) / 36e5;
-const fichando = () => db.trabajos.find((t) => (t.horas || []).some((h) => !h.fin));
+const miUid = () => window.cloud?.user?.uid || null;
+const esMia = (h) => !h.uid || h.uid === miUid();
+const fichando = () => db.trabajos.find((t) => (t.horas || []).some((h) => !h.fin && esMia(h)));
 const cobradoDe = (t) => (t.pagos || []).filter((p) => p.cobrado).reduce((s, p) => s + p.importe, 0);
 const gastosDe = (t) => (t.gastos || []).reduce((s, g) => s + g.importe, 0) + db.material.filter((m) => m.trabajoId === t.id && m.comprado && m.precio).reduce((s, m) => s + m.precio, 0);
 function rentabilidad(t) {
@@ -378,8 +380,8 @@ function socioResumen(t) {
   return `<div class="card dark" style="margin-top:10px"><div class="muted">Para quedar en paz con ${esc(t.socio)} (lo cobrado hasta hoy)</div><div class="cond" style="font-size:26px;font-weight:700">${debesAlSocio >= 0 ? `Le pagas <span style="color:var(--brand)">${eur(debesAlSocio)}</span>` : `Te paga <span style="color:var(--brand)">${eur(-debesAlSocio)}</span>`}</div><div class="muted">Beneficio ${eur(beneficio)} · ${eur(mitad)} cada uno</div></div>`;
 }
 window.trabajo = trabajo; window.cliente = cliente;
-window.fichar = (id) => { const t = trabajo(id), abierto = t.horas.find((h) => !h.fin);
-  if (abierto) { abierto.fin = Date.now(); toast('Parado'); } else { const otro = fichando(); if (otro) otro.horas.find((h) => !h.fin).fin = Date.now(); t.horas.push({ inicio: Date.now(), fin: null }); toast('¡A darle!'); }
+window.fichar = (id) => { const t = trabajo(id), abierto = t.horas.find((h) => !h.fin && esMia(h));
+  if (abierto) { abierto.fin = Date.now(); toast('Parado'); } else { const otro = fichando(); if (otro) otro.horas.find((h) => !h.fin && esMia(h)).fin = Date.now(); t.horas.push({ id: uid(), uid: miUid() || undefined, inicio: Date.now(), fin: null }); toast('¡A darle!'); }
   save(); render(); };
 window.cobro = (tid, pid, v) => { const t = trabajo(tid), p = t.pagos.find((x) => x.id === pid); p.cobrado = v; p.fecha = v ? Date.now() : null;
   if (t.pagos.every((x) => x.cobrado) && t.estado === 'por_cobrar') t.estado = 'terminado'; save(); render(); if (v) toast('Cobrado ' + eur(p.importe)); };
@@ -592,7 +594,7 @@ window.render = function render() {
   const [route, arg] = (location.hash.slice(1) || 'inicio').split('/');
   const v = views[route] || views.inicio;
   $('#view').innerHTML = v(arg);
-  const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos', gastodia: 'trabajos', cuentas: 'trabajos', salida: 'herramientas', material: 'compra' }[route] || route;
+  const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos', gastodia: 'trabajos', cuentas: 'trabajos', equipo: 'trabajos', unirme: 'trabajos', companeros: 'trabajos', salida: 'herramientas', material: 'compra' }[route] || route;
   document.querySelectorAll('.nav a').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
 };
 window.addEventListener('hashchange', () => { closeSheet(); if (Date.now() - (window._toastAt || 0) > 500) $('#toast').hidden = true; render(); window.scrollTo(0, 0); });

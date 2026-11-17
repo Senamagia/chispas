@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function yo() { return request.auth != null; }
+
+    // Los datos de cada persona: solo los ve y los toca ella
+    match /users/{uid}/{document=**} {
+      allow read, write: if yo() && request.auth.uid == uid;
+    }
+
+    // Avisos programados de cada persona (los envía la hoja de Google)
+    match /avisos/{id} {
+      allow read, delete: if yo() && resource.data.uid == request.auth.uid;
+      allow create, update: if yo() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Móviles donde cada persona quiere recibir sus avisos
+    match /tokens/{token} {
+      allow read, delete: if yo() && resource.data.uid == request.auth.uid;
+      allow create, update: if yo() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Trabajos en equipo: se entra con el código; solo los miembros ven y apuntan
+    match /equipos/{code} {
+      function eq() { return get(/databases/$(database)/documents/equipos/$(code)).data; }
+      function miembro() { return yo() && request.auth.uid in resource.data.miembros; }
+      function soloMiNombre() { return request.resource.data.nombres.diff(resource.data.nombres).affectedKeys().hasOnly([request.auth.uid]); }
+      function cambia() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+      // Con el código se puede ver la invitación (título, cliente, día) antes de unirse
+      allow get: if yo();
+      allow create: if yo() && request.resource.data.owner == request.auth.uid && request.resource.data.miembros == [request.auth.uid];
+      allow update: if
+        // Los miembros apuntan cosas; el dueño no cambia, los miembros tampoco; solo el dueño oculta o enseña los precios
+        (miembro() && request.resource.data.owner == resource.data.owner && request.resource.data.miembros == resource.data.miembros && soloMiNombre()
+          && (request.resource.data.verPrecios == resource.data.verPrecios || request.auth.uid == resource.data.owner))
+        // Unirse: solo puedes añadirte a ti mismo
+        || (yo() && !(request.auth.uid in resource.data.miembros) && cambia().hasOnly(['miembros', 'nombres']) && soloMiNombre()
+          && request.resource.data.miembros.hasAll(resource.data.miembros) && request.resource.data.miembros.size() == resource.data.miembros.size() + 1
+          && request.auth.uid in request.resource.data.miembros)
+        // Salir: solo puedes quitarte a ti mismo (el dueño no sale: deja de compartir)
+        || (miembro() && request.auth.uid != resource.data.owner && cambia().hasOnly(['miembros'])
+          && request.resource.data.miembros == resource.data.miembros.removeAll([request.auth.uid]));
+      allow delete: if yo() && resource.data.owner == request.auth.uid;
+
+      // Horas, gastos, material, tareas…: cosa de los miembros
+      match /items/{id} {
+        allow read, write: if yo() && request.auth.uid in eq().miembros;
+      }
+      // Presupuesto y cobros: los escribe el dueño; los demás lo ven solo si él quiere
+      match /privado/{id} {
+        allow read: if yo() && (eq().owner == request.auth.uid || (request.auth.uid in eq().miembros && eq().verPrecios == true));
+        allow write: if yo() && eq().owner == request.auth.uid;
+      }
+    }
+  }
+}

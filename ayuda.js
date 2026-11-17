@@ -57,6 +57,15 @@ const MANUAL = [
     'Para acercar, pellizca con dos dedos sobre el plano o usa + y −. Arrastra con un dedo para moverte. «Ajustar» lo vuelve a encuadrar.',
     '<b>Calcar foto</b>: haz una foto a un plano, ponla de fondo medio transparente y repásala. La primera medida que pongas fija la escala.',
     '«Pasar los m² al presupuesto» crea las partidas con el precio de tu catálogo.']],
+  ['Trabajar en equipo', 'equipo', [
+    'En el Resumen de un trabajo toca <b>Trabajar en equipo</b>. Elige cómo os repartís: <b>según las horas</b> de cada uno, <b>a medias</b>, <b>jornal fijo</b> (X € al día o a la hora) o <b>porcentaje</b>.',
+    'Toca <b>Mandar invitación por WhatsApp</b>. Tu compañero toca el enlace, entra con su cuenta (Android o iPhone) y ya está dentro. También puede escribir el código en Más › Compañeros › Unirme con código.',
+    'Cada uno ficha <b>sus horas</b> desde su móvil y veis los dos el material, el plano y las tareas.',
+    'En <b>¿Quién lleva qué?</b> cada uno marca lo que lleva: se acabó el «pensaba que la traías tú».',
+    'Los gastos se apuntan diciendo <b>quién pagó</b>. Si es algo solo tuyo (tu bocadillo), márcalo y no se reparte. También puedes apuntar cobros en mano y adelantos.',
+    'Arriba sale <b>quién debe a quién</b> para quedar en paz, y «Ver cálculo» lo explica paso a paso. Cuando os paguéis, toca «Ya está pagado».',
+    'Solo quien crea el trabajo cambia el presupuesto y marca los cobros. Si va a jornal, puede no enseñar los precios del cliente.',
+    'En <b>Más › Compañeros</b> ves lo que debes o te deben con cada uno, sumando todos los trabajos.']],
   ['Hablarle a la app', 'voz', [
     'Toca el micrófono amarillo y di, por ejemplo: «Comprar dos sacos de yeso», «El taladro está en el coche», «La radial la tiene Paco» o «Recuérdame llamar a Marta mañana a las 10».',
     'Siempre te enseña lo que ha entendido antes de guardarlo, por si hay que corregirlo.',
@@ -102,6 +111,7 @@ const CONSEJOS = {
   material: ['La compra', 'Marca cada cosa cuando la compres. En «Lo que tengo» llevas tu almacén y te avisa cuando quede poco.'],
   herramientas: ['Tus herramientas', 'Toca una para cambiarla de sitio. Antes de salir, usa «Salir de casa» para marcar lo que te llevas.'],
   salida: ['Salir de casa', 'Toca lo que coges y pulsa el botón de abajo. Al volver, «He vuelto» las devuelve a su sitio.'],
+  equipo: ['Trabajo en equipo', 'Arriba ves quién debe a quién. Apunta los gastos diciendo quién pagó y marca en «¿Quién lleva qué?» lo que llevas tú.'],
   menu: ['Más opciones', 'Aquí están tu cuenta, tus precios, tus clientes, los ajustes y la ayuda.'],
 };
 window.tutorialModo = (on, reiniciar) => { db.ajustes.tutorialOff = !on; if (reiniciar || on) db.ajustes.tutorialVisto = {}; if (reiniciar) db.ajustes.ayudaPlanoVista = false; save(); toast(on ? 'Verás un consejo en cada pantalla' : 'Consejos desactivados'); if (reiniciar) location.hash = '#inicio'; else render(); };

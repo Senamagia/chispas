@@ -9,6 +9,7 @@ window.cloud = cloud;
   if (!window.firebase) { cloud.estado = 'Sin conexión con la nube'; return; }
   firebase.initializeApp(FIREBASE_CONFIG);
   const auth = firebase.auth(), fs = firebase.firestore();
+  cloud.fs = fs; cloud.auth = auth;
   fs.enablePersistence({ synchronizeTabs: true }).catch(() => {});
   let unsub = null, pushTimer = null, aplicando = false;
 
