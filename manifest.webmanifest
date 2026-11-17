@@ -15,7 +15,7 @@
     { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Apuntar material", "url": "./#material", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Compra", "url": "./#compra", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Trabajos", "url": "./#trabajos", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

@@ -65,7 +65,7 @@ window.cloud = cloud;
       if (d.getTime() > ahora) out[`${uid}_j_${t.id}`] = { when: d.getTime(), title: 'Mañana: ' + t.titulo, body: `A las ${fmtTime(t.cuando)}. Prepara lo que te llevas y carga las baterías.`, link: '#preparar/' + t.id };
     });
     db.herramientas.filter((h) => h.donde === 'Prestada' && h.desde).forEach((h) => {
-      const w = h.desde + 7 * 864e5; if (w > ahora) out[`${uid}_h_${h.id}`] = { when: w, title: 'Herramienta prestada', body: `${h.nombre} lleva una semana fuera (${h.detalle || 'prestada'}).`, link: '#material' };
+      const w = h.desde + 7 * 864e5; if (w > ahora) out[`${uid}_h_${h.id}`] = { when: w, title: 'Herramienta prestada', body: `${h.nombre} lleva una semana fuera (${h.detalle || 'prestada'}).`, link: '#herramientas' };
     });
     // Fin del día: cuánto material pequeño has gastado
     const hoy20 = new Date(); hoy20.setHours(20, 30, 0, 0);

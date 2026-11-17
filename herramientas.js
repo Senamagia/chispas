@@ -102,10 +102,8 @@ let selModo = false, selHerr = new Set();
 const tile = (h, extra = '') => `<button class="tool-tile ${selModo && selHerr.has(h.id) ? 'on' : ''}" ${selModo ? `aria-pressed="${selHerr.has(h.id)}" onclick="selToggle('${h.id}')"` : `onclick="moverRapido('${h.id}')"`} ${extra}>${selModo && selHerr.has(h.id) ? '<span class="tick" aria-hidden="true">✓</span>' : ''}<span class="t">${esc(h.nombre)}</span><span class="muted">${esc(esFuera(h) ? h.detalle || h.donde : h.marca ? [h.marca, h.voltios && h.voltios + ' V', h.ah && h.ah + (h.tipo === 'bateria' ? ' Ah' : ' A')].filter(Boolean).join(' · ') : (h.oficios || []).slice(0, 2).join(', '))}</span>${h.tipo === 'bateria' ? barraCarga(h) : ''}</button>`;
 
 /* ---------- Pestaña Herramientas de Material ---------- */
-const vistaMaterialAnterior = views.material;
-views.material = () => {
-  if (tabMaterial !== 'herramientas') return vistaMaterialAnterior();
-  const html = vistaMaterialAnterior(), cabecera = html.slice(0, html.indexOf('</div>', html.indexOf('class="tabs"')) + 6);
+views.herramientas = () => {
+  const cabecera = `<header class="top"><h1>Herramientas</h1><button class="btn" onclick="formHerramienta()" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Añadir</button></header>`;
   const fuera = db.herramientas.filter(esFuera), bats = db.herramientas.filter((h) => esBat(h) && !esFuera(h));
   const vacias = bats.filter((h) => h.tipo === 'bateria' && h.carga === 'vacia').length;
   const porLugar = lugares().map((l) => [l, db.herramientas.filter((h) => h.donde === l && !esBat(h))]).filter(([, l]) => l.length);
@@ -163,7 +161,7 @@ views.salida = () => {
   ${grupo(prox ? 'Para ' + esc(prox.titulo) : '', sugeridas, true)}
   ${restoPorLugar.map(([l, x]) => grupo('En ' + esc(l), x)).join('')}
   ${yaVa.length ? `<h2 style="margin-top:6px">Ya en ${esc(salidaDestino)} · ${yaVa.length}</h2><div class="muted">${yaVa.map((h) => esc(h.nombre)).join(' · ')}</div>` : ''}
-  ${!enCasa.length ? '<div class="card empty">Primero apunta tus herramientas en Material › Herramientas.</div>' : ''}
+  ${!enCasa.length ? '<div class="card empty">Primero apunta tus herramientas en la pestaña Herramientas.</div>' : ''}
   ${vuelta.length ? `<button class="btn ghost block" onclick="salidaVuelta()">He vuelto: devolver ${vuelta.length} a su sitio</button>` : ''}
   <div style="position:sticky;bottom:calc(84px + env(safe-area-inset-bottom));z-index:5"><button class="btn block" style="min-height:60px;font-size:18px;box-shadow:0 6px 18px rgba(0,0,0,.25)" onclick="salidaOk()" ${salidaSel.size ? '' : 'disabled'}>${salidaSel.size ? `Me llevo ${salidaSel.size} · al ${esc(salidaDestino.toLowerCase())}` : 'Toca lo que coges'}</button></div>`;
 };

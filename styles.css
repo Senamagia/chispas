@@ -47,7 +47,7 @@ h2{font-size:22px}
 
 /* ===== Estructura ===== */
 .app{min-height:100%;display:flex;flex-direction:column}
-.view{flex:1;max-width:640px;width:100%;margin:0 auto;padding:16px 16px calc(100px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.view{flex:1;max-width:640px;width:100%;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(100px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:6px}
 .top-left{display:flex;align-items:center;gap:12px}
 .logo-btn{border:0;background:none;padding:0;border-radius:14px}
@@ -132,3 +132,10 @@ h2{font-size:22px}
 .tool-tile.on .muted{color:#1C2430}
 .tool-tile .tick{position:absolute;top:8px;right:10px;width:26px;height:26px;border-radius:13px;background:#1C2430;color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:800}
 .btn:disabled{opacity:.45}
+/* v0.5 · iPhone y versión sencilla */
+input,select,textarea{font-size:max(16px,1em)}
+.sheet{padding-top:max(10px,env(safe-area-inset-top))}
+details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:'+';margin-left:auto;font-size:24px;color:var(--ink2)}details[open]>summary::after{content:'−'}
+.icon-btn{min-width:44px;min-height:44px}
+.nav a{min-width:60px}

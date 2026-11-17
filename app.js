@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.4.2';
+const VERSION = '0.5.0';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -391,13 +391,14 @@ views.preparar = (id) => {
   return `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><div><div class="muted">${fmtWhen(t.cuando)} · ${esc(nombreTrabajo(t))}</div><h1>Qué te llevas</h1></div></header>
   <a class="btn brand block" href="#salida" style="min-height:56px">Coger herramientas: modo «Salir de casa»</a>
   ${delArmario ? `<div class="tip"><b>Esta noche:</b> pasa ${delArmario} ${delArmario === 1 ? 'cosa' : 'cosas'} del armario al coche y carga las baterías.</div>` : ''}
-  <section class="card"><h2>Herramientas${ofs.length ? ' · ' + ofs.join(', ') : ''}</h2><div class="list">${herr.map((h) => `<label class="item" style="align-items:center"><input type="checkbox" class="chk"><span class="grow">${esc(h.nombre)}</span>${tag(h)}</label>`).join('') || '<div class="empty">Apunta tus herramientas en Material › Herramientas y marca para qué oficios las usas: aquí saldrá la lista sola.</div>'}</div></section>
+  <section class="card"><h2>Herramientas${ofs.length ? ' · ' + ofs.join(', ') : ''}</h2><div class="list">${herr.map((h) => `<label class="item" style="align-items:center"><input type="checkbox" class="chk"><span class="grow">${esc(h.nombre)}</span>${tag(h)}</label>`).join('') || '<div class="empty">Apunta tus herramientas en la pestaña Herramientas y marca para qué oficios las usas: aquí saldrá la lista sola.</div>'}</div></section>
   <section class="card"><h2>Material</h2><div class="list">${mat.map((m) => `<label class="item" style="align-items:center"><input type="checkbox" class="chk"><span class="grow">${esc(m.nombre)} <span class="muted">${esc(m.cantidad || '')}</span></span>${m.comprado ? '<span class="chip ok">Comprado</span>' : '<span class="chip red">Comprar</span>'}</label>`).join('') || '<div class="empty">No hay material apuntado para este trabajo.</div>'}</div></section>`;
 };
 
 let tabMaterial = 'comprar';
 views.material = () => {
-  const tabs = [['comprar', 'Comprar'], ['stock', 'Stock'], ['herramientas', 'Herramientas']];
+  if (tabMaterial === 'herramientas') tabMaterial = 'comprar';
+  const tabs = [['comprar', 'Por comprar'], ['stock', 'Lo que tengo']];
   let body = '';
   if (tabMaterial === 'comprar') {
     const pend = db.material.filter((m) => !m.comprado);
@@ -418,8 +419,8 @@ views.material = () => {
     const block = ([s, l], red) => `<section class="card"><div class="between"><h2>${red ? 'Fuera de su sitio' : s}</h2><span class="muted">${l.length}</span></div><div class="list">${l.map((h) => `<div class="item" style="align-items:center"><div class="grow"><div class="t">${esc(h.nombre)}</div><div class="muted" ${red ? 'style="color:var(--red);font-weight:600"' : ''}>${esc(h.detalle || h.donde)}${h.desde ? ' · hace ' + Math.max(1, Math.round((Date.now() - h.desde) / 864e5)) + ' días' : ''}</div></div><button class="btn sm light" onclick="formHerramienta(db.herramientas.find(x=>x.id==='${h.id}'))">Mover</button></div>`).join('')}</div></section>`;
     body = (fuera.length ? block(['', fuera.flatMap(([, l]) => l)], true) : '') + dentro.map((g) => block(g)).join('') || '<div class="card empty">Apunta tus herramientas y dónde están (coche, armario, maletín). Si prestas una o se queda en una obra, te lo recuerdo.</div>';
   }
-  const add = { comprar: 'formMaterial()', stock: 'formStock()', herramientas: 'formHerramienta()' }[tabMaterial];
-  return `<header class="top"><h1>Material</h1><button class="btn" onclick="${add}" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Añadir</button></header>
+  const add = { comprar: 'formMaterial()', stock: 'formStock()' }[tabMaterial];
+  return `<header class="top"><h1>Compra</h1><button class="btn" onclick="${add}" style="padding:0 14px">${ICON.plus.replace('<svg', '<svg style="stroke:var(--brand)"')}Añadir</button></header>
   ${tabMaterial === 'comprar' ? '<button class="btn brand block" onclick="checklistMaterial()">Lista de material por tipo de chapuza</button>' : ''}
   <div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${tabMaterial === k}" onclick="tabMaterial='${k}';render()">${t}${k === 'comprar' ? ' · ' + db.material.filter((m) => !m.comprado).length : ''}</button>`).join('')}</div>${body}`;
 };
@@ -588,7 +589,7 @@ window.render = function render() {
   const [route, arg] = (location.hash.slice(1) || 'inicio').split('/');
   const v = views[route] || views.inicio;
   $('#view').innerHTML = v(arg);
-  const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos', gastodia: 'trabajos', salida: 'material' }[route] || route;
+  const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos', gastodia: 'trabajos', cuentas: 'trabajos', salida: 'herramientas', material: 'compra' }[route] || route;
   document.querySelectorAll('.nav a').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
 };
 window.addEventListener('hashchange', () => { closeSheet(); render(); window.scrollTo(0, 0); });

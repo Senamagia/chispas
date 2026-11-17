@@ -129,7 +129,7 @@ function checklistMaterial(trabajoId, modo) {
       if (!ckSel.size) return toast('Marca algo de la lista'); const n = ckSel.size;
       if (ckModo === 'material') ckSel.forEach((nombre) => db.material.push({ id: uid(), nombre, cantidad: '', tienda: 'Obramat', trabajoId: ckTrabajo || null, comprado: false, creado: Date.now() }));
       else ckSel.forEach((nombre) => db.herramientas.push({ id: uid(), nombre, tipo: 'herramienta', donde: lugares()[1] || lugares()[0], casa: lugares()[1] || lugares()[0], oficios: [tipo?.oficio].filter(Boolean) }));
-      ckSel = new Set(); save(); closeSheet(); render(); toast(ckModo === 'material' ? `${n} añadidos a la lista de compra` : `${n} herramientas guardadas. Muévelas a su sitio en Material › Herramientas`);
+      ckSel = new Set(); save(); closeSheet(); render(); toast(ckModo === 'material' ? `${n} añadidos a la lista de compra` : `${n} herramientas guardadas. Muévelas a su sitio en la pestaña Herramientas`);
     });
   });
 }
