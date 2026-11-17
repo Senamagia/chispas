@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -24,6 +24,7 @@ const CATALOGO_INICIAL = [
   ['Otros', 'Hora de trabajo', 'hora'], ['Otros', 'Desplazamiento', 'ud'],
 ];
 
+const _p = (total, pcts) => { const r = pcts.map((p) => Math.round(total * p) / 100); r[r.length - 1] = Math.round((total - r.slice(0, -1).reduce((s, x) => s + x, 0)) * 100) / 100; return r; };
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 function emptyDB() {
   return {
@@ -175,7 +176,7 @@ function formTrabajo(t = {}) {
       // Rehacer los pagos si cambia el importe o el plan y aún no se ha cobrado nada
       if (importe && !(obj.pagos || []).some((p) => p.cobrado)) {
         const nombres = { 2: ['Al empezar', 'Al terminar'], 3: ['Al empezar', 'A mitad de obra', 'Al terminar'], 1: ['Al terminar'] };
-        const pcts = PLANES[obj.plan]; obj.pagos = pcts.map((p, i) => ({ id: uid(), nombre: nombres[pcts.length][i], pct: p, importe: Math.round(importe * p) / 100, cobrado: false }));
+        const pcts = PLANES[obj.plan], imps = _p(importe, pcts); obj.pagos = pcts.map((p, i) => ({ id: uid(), nombre: nombres[pcts.length][i], pct: p, importe: imps[i], cobrado: false }));
       }
       if (!t.id) db.trabajos.push(obj); save(); closeSheet(); location.hash = '#trabajo/' + obj.id; render(); toast('Trabajo guardado');
     };

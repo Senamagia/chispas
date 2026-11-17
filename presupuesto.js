@@ -25,7 +25,7 @@ function syncImporte(t) {
   const { total } = totales(t); t.importe = total;
   if (total && !(t.pagos || []).some((p) => p.cobrado)) {
     const nombres = { 2: ['Al empezar', 'Al terminar'], 3: ['Al empezar', 'A mitad de obra', 'Al terminar'], 1: ['Al terminar'] };
-    const pcts = PLANES[t.plan || '50/50']; t.pagos = pcts.map((p, i) => ({ id: uid(), nombre: nombres[pcts.length][i], pct: p, importe: Math.round(total * p) / 100, cobrado: false }));
+    const pcts = PLANES[t.plan || '50/50'], imps = _p(total, pcts); t.pagos = pcts.map((p, i) => ({ id: uid(), nombre: nombres[pcts.length][i], pct: p, importe: imps[i], cobrado: false }));
   }
 }
 function lineaPrecioCliente(t, l) { return l.tipo === 'material' ? (num(l.precio) || 0) * (1 + (presu(t).margen || 0) / 100) : num(l.precio) || 0; }
@@ -161,7 +161,7 @@ window.generarPDF = async (id) => {
   tot('TOTAL', eur(T.total), true);
   y += 2; doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30); doc.text('Forma de pago', X, y); y += 5;
   doc.setFont('helvetica', 'normal'); const pcts = PLANES[t.plan || '50/50'], noms = { 2: ['al empezar', 'al terminar'], 3: ['al empezar', 'a mitad de obra', 'al terminar'], 1: ['al terminar el trabajo'] }[pcts.length];
-  doc.text(pcts.map((x, i) => `${x} % ${noms[i]} (${eur(Math.round(T.total * x) / 100)})`).join(' · '), X, y); y += 8;
+  const imps = _p(T.total, pcts); doc.text(pcts.map((x, i) => `${x} % ${noms[i]} (${eur(imps[i])})`).join(' · '), X, y); y += 8;
   if (p.notas) { doc.setFont('helvetica', 'bold'); doc.text('Notas', X, y); y += 5; doc.setFont('helvetica', 'normal'); const nl = doc.splitTextToSize(p.notas, W); if (y + nl.length * 4.6 > 262) { doc.addPage(); y = 20; } doc.text(nl, X, y); y += nl.length * 4.6 + 4; }
   if (y > 255) { doc.addPage(); y = 20; }
   y = Math.max(y + 6, 250); doc.setDrawColor(170); doc.setLineWidth(0.2); doc.line(X, y, X + 70, y); doc.line(X + W - 50, y, X + W, y);
