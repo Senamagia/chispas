@@ -5,7 +5,7 @@
 
 /* ---------- Datos ---------- */
 const KEY = 'chispas.v1';
-const VERSION = '0.5.1';
+const VERSION = '0.5.2';
 const OFICIOS = ['Electricidad', 'Fontanería', 'Albañilería', 'Pladur', 'Carpintería', 'Pintura', 'Otros'];
 const TIENDAS = ['Obramat', 'Leroy Merlin', 'Otra'];
 const SITIOS = ['Coche', 'Armario de casa', 'Maletín', 'En una obra', 'Prestada'];
@@ -40,7 +40,7 @@ function save() { db.ajustes.modificado = Date.now(); try { localStorage.setItem
 /* ---------- Utilidades ---------- */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const eur = (n) => (Math.round((n || 0) * 100) / 100).toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €';
+const eur = (n) => { const v = Math.round((n || 0) * 100) / 100; return v.toLocaleString('es-ES', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; };
 const num = (v) => { const n = parseFloat(String(v ?? '').replace(',', '.')); return isNaN(n) ? null : n; };
 const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 const sameDay = (a, b) => a && b && new Date(a).toDateString() === new Date(b).toDateString();
@@ -49,6 +49,7 @@ const fmtTime = (d) => new Date(d).toLocaleTimeString('es-ES', { hour: '2-digit'
 const fmtWhen = (d) => { if (!d) return ''; const t = today(), x = new Date(d); const diff = Math.round((new Date(x).setHours(0, 0, 0, 0) - t) / 864e5);
   const h = fmtTime(d); return diff === 0 ? `Hoy · ${h}` : diff === 1 ? `Mañana · ${h}` : diff === -1 ? `Ayer · ${h}` : `${fmtDay(d)} · ${h}`; };
 const cliente = (id) => db.clientes.find((c) => c.id === id);
+const haceDias = (ms) => { const n = Math.round((Date.now() - ms) / 864e5); return n < 1 ? 'desde hoy' : n === 1 ? 'desde ayer' : `hace ${n} días`; };
 const trabajo = (id) => db.trabajos.find((t) => t.id === id);
 const nombreTrabajo = (t) => t ? `${t.titulo}${cliente(t.clienteId) ? ' · ' + cliente(t.clienteId).nombre : ''}` : '';
 const ICON = {
@@ -99,7 +100,9 @@ applyTheme();
 /* ---------- Avisos (toast con deshacer) ---------- */
 let toastTimer;
 function toast(msg, undo) {
-  const t = $('#toast'); t.innerHTML = esc(msg) + (undo ? ' <button>Deshacer</button>' : ''); t.hidden = false;
+  window._toastAt = Date.now(); const t = $('#toast'); t.innerHTML = esc(msg) + (undo ? ' <button>Deshacer</button>' : ''); t.hidden = false;
+  const fijo = [...document.querySelectorAll('#view [style*="position:sticky"]')].map((e) => e.getBoundingClientRect()).filter((r) => r.height && r.bottom > innerHeight - 260 && r.top < innerHeight).sort((x, y) => x.top - y.top)[0];
+  t.style.bottom = fijo ? (innerHeight - fijo.top + 8) + 'px' : '';
   if (undo) t.querySelector('button').onclick = () => { undo(); t.hidden = true; render(); };
   clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 4500);
 }
@@ -185,7 +188,7 @@ function formTrabajo(t = {}) {
     };
     const del = s.querySelector('[data-del]'); del && (del.onclick = () => {
       if (!confirm('¿Borrar este trabajo y todo lo que tiene apuntado?')) return;
-      db.trabajos = db.trabajos.filter((x) => x !== t); save(); closeSheet(); location.hash = '#trabajos';
+      db.trabajos = db.trabajos.filter((x) => x !== t); db.material = db.material.filter((m) => m.trabajoId !== t.id || m.comprado); db.tareas.forEach((k) => { if (k.trabajoId === t.id) k.trabajoId = null; }); save(); closeSheet(); location.hash = '#trabajos';
     });
   });
 }
@@ -306,7 +309,7 @@ views.inicio = () => {
       ${pendientes.map((t) => { const late = t.cuando && t.cuando < Date.now();
         return `<div class="item"><input type="checkbox" class="chk" aria-label="Hecho" onchange="hecha('${t.id}')"><div class="grow" onclick="formTarea(db.tareas.find(x=>x.id==='${t.id}'))"><div class="t">${esc(t.texto)}</div>
         <div class="muted" ${late ? 'style="color:var(--warn);font-weight:700"' : ''}>${t.cuando ? fmtWhen(t.cuando) : ''}${t.trabajoId && trabajo(t.trabajoId) ? ' · ' + esc(trabajo(t.trabajoId).titulo) : ''}</div></div></div>`; }).join('')}
-      ${fuera.map((h) => `<div class="item"><span class="chip red" style="margin-top:2px">Fuera</span><div class="grow" onclick="formHerramienta(db.herramientas.find(x=>x.id==='${h.id}'))"><div class="t">Recuperar ${esc(h.nombre)}</div><div class="muted">${esc(h.detalle || h.donde)}${h.desde ? ' · desde hace ' + Math.max(1, Math.round((Date.now() - h.desde) / 864e5)) + ' días' : ''}</div></div></div>`).join('')}
+      ${fuera.map((h) => `<div class="item"><span class="chip red" style="margin-top:2px">Fuera</span><div class="grow" onclick="formHerramienta(db.herramientas.find(x=>x.id==='${h.id}'))"><div class="t">Recuperar ${esc(h.nombre)}</div><div class="muted">${esc(h.detalle || h.donde)}${h.desde ? ' · ' + haceDias(h.desde) : ''}</div></div></div>`).join('')}
       ${count ? '' : '<div class="empty">Nada pendiente. Toca <b>+ Nuevo</b> o el micrófono para apuntar algo.</div>'}
     </div>
   </section>
@@ -411,12 +414,12 @@ views.material = () => {
     const bajo = db.stock.filter((s) => s.minimo != null && s.cantidad < s.minimo);
     body = (bajo.length ? `<div class="tip"><b>Te queda poco de ${bajo.length} ${bajo.length === 1 ? 'cosa' : 'cosas'}.</b> Toca «Reponer» para mandarlas a la lista de compra.</div>` : '')
       + `<section class="card"><div class="list">${db.stock.map((s) => { const low = s.minimo != null && s.cantidad < s.minimo;
-        return `<div class="item" style="align-items:center"><div class="grow" onclick="formStock(db.stock.find(x=>x.id==='${s.id}'))"><div class="t">${esc(s.nombre)}</div><div class="muted" ${low ? 'style="color:var(--red);font-weight:600"' : ''}>${s.cantidad} ${esc(s.unidad || '')} · ${esc(s.donde)}${s.minimo != null ? ' · mínimo ' + s.minimo : ''}</div></div>
-        <button class="icon-btn" aria-label="Uno menos" onclick="stockMas('${s.id}',-1)">−</button><button class="icon-btn" aria-label="Uno más" onclick="stockMas('${s.id}',1)">+</button>${low ? `<button class="btn sm danger" onclick="reponer('${s.id}')">Reponer</button>` : ''}</div>`; }).join('') || '<div class="empty">Apunta lo que tienes en casa o en el coche (tornillería, sacos, cable…) y te aviso cuando quede poco.</div>'}</div></section>`;
+        return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px"><div onclick="formStock(db.stock.find(x=>x.id==='${s.id}'))"><div class="t">${esc(s.nombre)}</div><div class="muted" ${low ? 'style="color:var(--red);font-weight:600"' : ''}>${esc(s.donde)}${s.minimo != null ? ' · avisa si bajan de ' + s.minimo : ''}</div></div>
+        <div class="row" style="gap:8px"><button class="icon-btn" aria-label="Uno menos" onclick="stockMas('${s.id}',-1)" style="font-size:22px">−</button><b style="min-width:70px;text-align:center;font-size:18px;${low ? 'color:var(--red)' : ''}">${String(s.cantidad).replace('.', ',')} ${esc(s.unidad || '')}</b><button class="icon-btn" aria-label="Uno más" onclick="stockMas('${s.id}',1)" style="font-size:22px">+</button><span style="flex:1"></span>${low ? `<button class="btn sm danger" onclick="reponer('${s.id}')">Reponer</button>` : ''}</div></div>`; }).join('') || '<div class="empty">Apunta lo que tienes en casa o en el coche (tornillería, sacos, cable…) y te aviso cuando quede poco.</div>'}</div></section>`;
   } else {
     const grupos = SITIOS.map((s) => [s, db.herramientas.filter((h) => h.donde === s)]).filter(([, l]) => l.length);
     const fuera = grupos.filter(([s]) => s === 'En una obra' || s === 'Prestada'), dentro = grupos.filter(([s]) => !(s === 'En una obra' || s === 'Prestada'));
-    const block = ([s, l], red) => `<section class="card"><div class="between"><h2>${red ? 'Fuera de su sitio' : s}</h2><span class="muted">${l.length}</span></div><div class="list">${l.map((h) => `<div class="item" style="align-items:center"><div class="grow"><div class="t">${esc(h.nombre)}</div><div class="muted" ${red ? 'style="color:var(--red);font-weight:600"' : ''}>${esc(h.detalle || h.donde)}${h.desde ? ' · hace ' + Math.max(1, Math.round((Date.now() - h.desde) / 864e5)) + ' días' : ''}</div></div><button class="btn sm light" onclick="formHerramienta(db.herramientas.find(x=>x.id==='${h.id}'))">Mover</button></div>`).join('')}</div></section>`;
+    const block = ([s, l], red) => `<section class="card"><div class="between"><h2>${red ? 'Fuera de su sitio' : s}</h2><span class="muted">${l.length}</span></div><div class="list">${l.map((h) => `<div class="item" style="align-items:center"><div class="grow"><div class="t">${esc(h.nombre)}</div><div class="muted" ${red ? 'style="color:var(--red);font-weight:600"' : ''}>${esc(h.detalle || h.donde)}${h.desde ? ' · ' + haceDias(h.desde) : ''}</div></div><button class="btn sm light" onclick="formHerramienta(db.herramientas.find(x=>x.id==='${h.id}'))">Mover</button></div>`).join('')}</div></section>`;
     body = (fuera.length ? block(['', fuera.flatMap(([, l]) => l)], true) : '') + dentro.map((g) => block(g)).join('') || '<div class="card empty">Apunta tus herramientas y dónde están (coche, armario, maletín). Si prestas una o se queda en una obra, te lo recuerdo.</div>';
   }
   const add = { comprar: 'formMaterial()', stock: 'formStock()' }[tabMaterial];
@@ -467,7 +470,7 @@ views.clientes = () => `<header class="row"><button class="back" onclick="histor
     return `<button class="item" style="width:100%;background:none;border:0;text-align:left;align-items:center" onclick="formCliente(cliente('${c.id}'))"><div class="grow"><div class="t">${esc(c.nombre)}</div><div class="muted">${ts.length} trabajo${ts.length === 1 ? '' : 's'}${c.tel ? ' · ' + esc(c.tel) : ''}</div></div>${debe > 0 ? `<span class="chip warn">Debe ${eur(debe)}</span>` : ''}</button>`; }).join('') || '<div class="empty">Sin clientes todavía.</div>'}</section>`;
 
 views.copia = () => `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><h1>Copia de seguridad</h1></header>
-  <div class="tip">Ahora mismo todo se guarda <b>solo en este móvil</b>. Hasta que conectemos la nube, descarga una copia de vez en cuando (por ejemplo, cada viernes) y guárdala en Drive.</div>
+  ${window.cloud?.user ? '<div class="tip" style="background:var(--ok-bg,#E6F4EA);color:var(--ok)">Con tu cuenta, todo se guarda solo en la nube. Esta copia es un extra por si acaso.</div>' : '<div class="tip">Sin cuenta, todo se guarda <b>solo en este móvil</b>. Crea tu cuenta en Más › Mi cuenta, o descarga una copia de vez en cuando y guárdala en Drive.</div>'}
   <section class="card" style="display:flex;flex-direction:column;gap:10px"><button class="btn block" onclick="exportar()">Descargar copia</button>
   <label class="btn light block" style="cursor:pointer">Recuperar desde una copia<input type="file" accept="application/json" class="sr" onchange="importar(this.files[0])"></label>
   <div class="muted">${db.ajustes.ultimaCopia ? 'Última copia: ' + fmtWhen(db.ajustes.ultimaCopia) : 'Todavía no has hecho ninguna copia.'}</div></section>`;
@@ -592,7 +595,7 @@ window.render = function render() {
   const tab = { trabajo: 'trabajos', preparar: 'trabajos', presupuesto: 'trabajos', plano: 'trabajos', gastodia: 'trabajos', cuentas: 'trabajos', salida: 'herramientas', material: 'compra' }[route] || route;
   document.querySelectorAll('.nav a').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
 };
-window.addEventListener('hashchange', () => { closeSheet(); render(); window.scrollTo(0, 0); });
+window.addEventListener('hashchange', () => { closeSheet(); if (Date.now() - (window._toastAt || 0) > 500) $('#toast').hidden = true; render(); window.scrollTo(0, 0); });
 render();
 
 // Contador de horas en vivo

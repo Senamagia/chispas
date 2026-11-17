@@ -88,7 +88,7 @@ window.moverRapido = (id) => {
       if (FUERA.includes(l)) { const d = prompt(l === 'Prestada' ? '¿A quién se la has dejado?' : '¿En qué obra?', h.detalle || ''); if (d === null) return; h.detalle = d; h.desde = Date.now(); }
       else { h.detalle = ''; h.desde = null; }
       if (!FUERA.includes(antes) && antes !== l && !h.casa) h.casa = antes;
-      h.donde = l; save(); closeSheet(); render(); toast(`${h.nombre} → ${l}`, () => { h.donde = antes; save(); }); }));
+      const prev = { detalle: h.detalle, desde: h.desde }; h.donde = l; save(); closeSheet(); render(); toast(`${h.nombre} → ${l}`, () => { h.donde = antes; Object.assign(h, prev); save(); }); }));
     s.querySelectorAll('[data-c]').forEach((b) => (b.onclick = () => { h.carga = b.dataset.c; save(); closeSheet(); render(); }));
   });
 };

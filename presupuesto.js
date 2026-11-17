@@ -35,16 +35,15 @@ views.presupuesto = (id) => {
   const p = presu(t), T = totales(t), c = cliente(t.clienteId);
   const chipE = p.estado === 'aceptado' ? 'ok' : p.estado === 'enviado' ? 'warn' : '';
   const fila = (l) => `<div class="card" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px" data-linea="${l.id}">
-    <div class="row"><input data-l="${l.id}" data-f="concepto" value="${esc(l.concepto)}" placeholder="Concepto" aria-label="Concepto" style="flex:1;min-height:42px;border:1.5px solid var(--line2);border-radius:9px;padding:0 10px;background:var(--card);font-weight:600">
-      <button class="icon-btn" style="width:40px;height:40px" aria-label="Quitar línea" onclick="quitarLinea('${t.id}','${l.id}')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    <div style="display:grid;grid-template-columns:64px 74px 1fr auto;gap:6px;align-items:center">
-      <input data-l="${l.id}" data-f="cantidad" value="${esc(l.cantidad)}" inputmode="decimal" aria-label="Cantidad" style="min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right">
-      <select data-l="${l.id}" data-f="unidad" aria-label="Unidad" style="min-height:40px;border:1.5px solid var(--line2);border-radius:9px;background:var(--card)">${UNIDADES.map((u) => `<option ${u === l.unidad ? 'selected' : ''}>${u}</option>`).join('')}</select>
-      <div class="row" style="gap:4px"><span class="muted">×</span><input data-l="${l.id}" data-f="precio" value="${esc(String(l.pack && num(l.precio) != null ? Math.round(num(l.precio) * 10000) / 10000 : l.precio).replace('.', ','))}" ${l.pack ? 'readonly' : ''} inputmode="decimal" aria-label="${l.tipo === 'material' ? 'Coste del material' : 'Precio'}" style="width:100%;min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right"><span class="muted">€</span></div>
-      <b data-imp="${l.id}" style="min-width:64px;text-align:right">${eur((num(l.cantidad) || 0) * lineaPrecioCliente(t, l))}</b>
+    <div class="row"><input data-l="${l.id}" data-f="concepto" value="${esc(l.concepto)}" placeholder="¿Qué trabajo o material?" aria-label="Concepto" style="flex:1;min-width:0;min-height:42px;border:1.5px solid var(--line2);border-radius:9px;padding:0 10px;background:var(--card);font-weight:600">
+      <button class="icon-btn" style="width:44px;height:44px;flex-shrink:0" aria-label="Quitar línea" onclick="quitarLinea('${t.id}','${l.id}')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr);gap:6px">
+      <label style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="muted" style="font-size:12px">Cantidad</span><input data-l="${l.id}" data-f="cantidad" value="${esc(String(l.cantidad ?? '').replace('.', ','))}" inputmode="decimal" style="min-height:44px;width:100%;min-width:0;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right"></label>
+      <label style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="muted" style="font-size:12px">Unidad</span><select data-l="${l.id}" data-f="unidad" style="min-height:44px;width:100%;min-width:0;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card)">${UNIDADES.map((u) => `<option ${u === l.unidad ? 'selected' : ''}>${u}</option>`).join('')}</select></label>
+      <label style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="muted" style="font-size:12px">${l.tipo === 'material' ? 'Te cuesta (€/' + esc(l.unidad || 'ud') + ')' : 'Precio (€/' + esc(l.unidad || 'ud') + ')'}</span><input data-l="${l.id}" data-f="precio" value="${esc(String(l.pack && num(l.precio) != null ? Math.round(num(l.precio) * 10000) / 10000 : l.precio ?? '').replace('.', ','))}" ${l.pack ? 'readonly' : ''} inputmode="decimal" style="min-height:44px;width:100%;min-width:0;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right${l.pack ? ';background:var(--bg)' : ''}"></label>
     </div>
     <div class="row" style="gap:6px;flex-wrap:wrap"><button class="chip ${l.tipo === 'material' ? '' : 'ink'}" style="border:0" onclick="tipoLinea('${t.id}','${l.id}','mano')">Mano de obra</button><button class="chip ${l.tipo === 'material' ? 'ink' : ''}" style="border:0" onclick="tipoLinea('${t.id}','${l.id}','material')">Material${l.tipo === 'material' ? ' · coste + margen' : ''}</button>
-      ${l.tipo === 'material' ? `<button class="chip ${l.pack ? 'ink' : ''}" style="border:0" onclick="packLinea('${t.id}','${l.id}')">${l.pack ? 'En paquete ✓' : 'Viene en paquete'}</button>` : ''}</div>
+      ${l.tipo === 'material' ? `<button class="chip ${l.pack ? 'ink' : ''}" style="border:0" onclick="packLinea('${t.id}','${l.id}')">${l.pack ? 'En paquete ✓' : 'Viene en paquete'}</button>` : ''}<b data-imp="${l.id}" style="margin-left:auto;font-size:17px">${eur((num(l.cantidad) || 0) * lineaPrecioCliente(t, l))}</b></div>
     ${l.tipo === 'material' && l.pack ? `<div style="background:var(--bg);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px">
       <div class="muted">Paquete de</div><div class="pills">${[1, 5, 10, 25, 50, 100, 200, 500].map((n) => `<button aria-pressed="${num(l.packUds) === n}" onclick="packSet('${t.id}','${l.id}','packUds',${n})">${n}</button>`).join('')}</div>
       <div class="row" style="gap:6px;flex-wrap:wrap"><input data-l="${l.id}" data-f="packUds" value="${esc(l.packUds || '')}" inputmode="numeric" aria-label="Unidades por paquete" style="width:70px;min-height:40px;border:1.5px solid var(--line2);border-radius:9px;padding:0 8px;background:var(--card);text-align:right"><span>uds por</span>
@@ -66,11 +65,11 @@ views.presupuesto = (id) => {
     <div><div class="muted" style="margin-bottom:6px">Forma de pago</div><div class="pills">${Object.keys(PLANES).map((k) => `<button aria-pressed="${(t.plan || '50/50') === k}" onclick="trabajo('${t.id}').plan='${k}';syncImporte(trabajo('${t.id}'));save();render()">${k}</button>`).join('')}</div></div>
     <div class="field"><label for="f-notas">Notas para el cliente</label><textarea id="f-notas" onchange="presuSet('${t.id}','notas',this.value)" placeholder="Incluye retirada de escombros. No incluye pintura…">${esc(p.notas || '')}</textarea></div>
   </section>
-  <section class="card dark" style="position:sticky;bottom:calc(84px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;z-index:5">
-    <div class="between"><div><div class="muted">TOTAL${t.factura ? ' (IVA incluido)' : ''}</div><div class="money" id="p-total" style="font-size:34px;line-height:1">${eur(T.total)}</div></div>
-      <div class="muted" id="p-desglose" style="text-align:right">${t.factura ? `Base ${eur(T.base)}<br>IVA ${eur(T.iva)}` : 'Sin factura'}</div></div>
-    <button class="btn brand block" onclick="generarPDF('${t.id}')">Generar PDF${p.estado === 'borrador' ? '' : ' otra vez'}</button>
-    ${p.estado === 'enviado' ? `<button class="btn block" style="background:#fff;color:#1C2430" onclick="aceptarPresu('${t.id}')">El cliente lo ha aceptado</button>` : ''}
+  ${p.estado === 'enviado' ? `<button class="btn ok block" style="background:var(--ok);color:#fff" onclick="aceptarPresu('${t.id}')">El cliente lo ha aceptado</button>` : ''}
+  <section class="card dark" style="position:sticky;bottom:calc(84px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;z-index:5;padding:10px 12px">
+    <div style="flex:1;min-width:0"><div class="muted" style="font-size:12px">TOTAL${t.factura ? ' CON IVA' : ''}</div><div class="money" id="p-total" style="font-size:28px;line-height:1">${eur(T.total)}</div>
+      <div class="muted" id="p-desglose" style="font-size:12px">${t.factura ? `Base ${eur(T.base)} · IVA ${eur(T.iva)}` : 'Sin factura'}</div></div>
+    <button class="btn brand" style="flex-shrink:0" onclick="generarPDF('${t.id}')">${p.estado === 'borrador' ? 'Enviar PDF' : 'Enviar otra vez'}</button>
   </section>`;
 };
 
@@ -84,10 +83,10 @@ document.addEventListener('input', (e) => {
     const pin = document.querySelector(`[data-l="${lid}"][data-f="precio"]`); if (pin) pin.value = l.precio === '' ? '' : String(Math.round(l.precio * 10000) / 10000).replace('.', ','); }
   const imp = document.querySelector(`[data-imp="${lid}"]`); if (imp) imp.textContent = eur((num(l.cantidad) || 0) * lineaPrecioCliente(t, l));
   const T = totales(t); const tot = $('#p-total'); if (tot) tot.textContent = eur(T.total);
-  const d = $('#p-desglose'); if (d && t.factura) d.innerHTML = `Base ${eur(T.base)}<br>IVA ${eur(T.iva)}`;
+  const d = $('#p-desglose'); if (d && t.factura) d.textContent = `Base ${eur(T.base)} · IVA ${eur(T.iva)}`;
   clearTimeout(window._pt); window._pt = setTimeout(() => { syncImporte(t); save(); }, 600);
 });
-document.addEventListener('change', (e) => { if (e.target.dataset?.f === 'unidad') { const t = db.trabajos.find((x) => x.presu?.lineas.some((l) => l.id === e.target.dataset.l)); if (t) { syncImporte(t); save(); } } });
+document.addEventListener('change', (e) => { if (e.target.dataset?.f === 'unidad') { const t = db.trabajos.find((x) => x.presu?.lineas.some((l) => l.id === e.target.dataset.l)); if (t) { syncImporte(t); save(); render(); } } });
 
 const eurU = (v) => (v < 1 ? (Math.round(v * 1000) / 1000).toLocaleString('es-ES', { minimumFractionDigits: 3 }) : (Math.round(v * 100) / 100).toLocaleString('es-ES', { maximumFractionDigits: 2 })) + ' €';
 window.eurU = eurU;
@@ -109,7 +108,7 @@ window.traerMaterial = (id) => { const t = trabajo(id), p = presu(t), ya = new S
 window.desdeCatalogo = (id) => {
   const t = trabajo(id), ofs = t.oficios?.length ? t.oficios : OFICIOS;
   const lista = db.catalogo.filter((c) => c.precio != null && (ofs.includes(c.oficio) || c.oficio === 'Otros'));
-  openSheet(`<h2>Del catálogo</h2>${lista.length ? '' : '<div class="tip">Aún no tienes precios puestos para estos oficios. Ponlos en Menú › Catálogo de precios.</div>'}
+  openSheet(`<h2>Del catálogo</h2>${lista.length ? '' : '<div class="tip">Aún no tienes precios puestos para estos oficios. Ponlos en Más › Mis precios.</div>'}
     <div class="list">${lista.map((c) => `<button class="item" style="width:100%;background:none;border:0;text-align:left;align-items:center" data-c="${c.id}"><div class="grow"><div class="t">${esc(c.nombre)}</div><div class="muted">${esc(c.oficio)}${c.conMaterial ? ' · con material' : ''}</div></div><b>${eur(c.precio)} <span class="muted">/${esc(c.unidad)}</span></b></button>`).join('')}</div>
     <a class="btn light block" href="#catalogo">Ir al catálogo de precios</a>`, (s) => s.querySelectorAll('[data-c]').forEach((b) => (b.onclick = () => {
       const c = db.catalogo.find((x) => x.id === b.dataset.c); closeSheet();

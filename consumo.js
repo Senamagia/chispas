@@ -3,7 +3,7 @@
 'use strict';
 
 const PEQUENO = ['Tacos', 'Tornillos', 'Tuercas', 'Arandelas', 'Bridas', 'Bornas Wago', 'Brocas', 'Discos de corte', 'Silicona', 'Cinta aislante'];
-const diaKey = (d = new Date()) => d.toISOString().slice(0, 10);
+const diaKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const trabajoHoy = (t) => (t.horas || []).some((h) => sameDay(h.inicio, new Date()));
 const preguntado = (t) => (db.ajustes.gastoDia || {})[t.id] === diaKey();
 window.pendientesGastoDia = () => db.trabajos.filter((t) => trabajoHoy(t) && !preguntado(t) && t.estado !== 'presupuesto');
@@ -19,7 +19,7 @@ views.gastodia = (id) => {
       <div class="row" style="gap:6px"><button class="icon-btn" style="width:52px;height:52px;font-size:24px;flex-shrink:0" aria-label="Uno menos" onclick="gastoMas('${l.id}',-1)">−</button>
         <input value="${n || ''}" placeholder="0" inputmode="numeric" aria-label="Gastado hoy" oninput="gastoHoy['${l.id}']=num(this.value)||0" style="flex:1;min-width:0;width:100%;min-height:52px;border:1.5px solid var(--line2);border-radius:12px;text-align:center;font-size:22px;font-weight:700;background:var(--card)">
         <button class="icon-btn" style="width:52px;height:52px;font-size:24px;flex-shrink:0" aria-label="Uno más" onclick="gastoMas('${l.id}',1)">+</button></div>
-      <div class="pills">${[5, 10, 25, 50, 100].map((x) => `<button onclick="gastoMas('${l.id}',${x})">+${x}</button>`).join('')}</div></section>`; };
+      <div class="pills" style="flex-wrap:wrap">${[5, 10, 25, 50, 100].map((x) => `<button onclick="gastoMas('${l.id}',${x})">+${x}</button>`).join('')}</div></section>`; };
   return `<header class="row"><button class="back" onclick="history.back()" aria-label="Volver">${ICON.back}</button><div style="flex:1"><div class="muted">Fin del día · ${esc(nombreTrabajo(t))}</div><h1 style="font-size:26px">¿Qué material pequeño has gastado hoy?</h1></div></header>
   ${lineas.map(fila).join('') || '<div class="card empty">Todavía no hay material pequeño en este trabajo. Añádelo abajo.</div>'}
   <section class="card"><div class="muted" style="margin-bottom:6px">Añadir otro material pequeño</div><div class="pills" style="flex-wrap:wrap">${PEQUENO.filter((n) => !lineas.some((l) => l.concepto.toLowerCase().startsWith(n.toLowerCase()))).map((n) => `<button onclick="gastoNuevo('${id}','${n}')">+ ${n}</button>`).join('')}<button onclick="gastoNuevo('${id}')">+ Otro</button></div></section>

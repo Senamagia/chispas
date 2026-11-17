@@ -27,7 +27,7 @@ const MANUAL = [
     'Cada línea puede ser mano de obra o material. Al material se le aplica el margen que elijas para ese cliente.',
     'Si compras por paquetes (una caja de 100 tacos), marca <b>Pack</b>: pones lo que cuesta la caja y cuántas trae, y calcula el precio por unidad.',
     'Elige la forma de cobro (50/50, 40/30/30 o al terminar) y si lleva IVA.',
-    'Cuando esté terminado, toca <b>Generar PDF</b>: se abre WhatsApp (o compartir) para mandárselo al cliente.',
+    'Cuando esté terminado, toca <b>Enviar PDF</b>: se abre WhatsApp (o compartir) para mandárselo al cliente.',
     'Cuando el cliente diga que sí, toca <b>El cliente lo ha aceptado</b>: el trabajo pasa a «En marcha» y salen los cobros.']],
   ['Cobros y lo que me renta', 'trabajos', [
     'En el Resumen del trabajo marca cada cobro cuando te paguen.',
@@ -93,7 +93,7 @@ const CONSEJOS = {
   inicio: ['Esto es Hoy', 'Arriba sale tu próxima obra con el botón para empezar. Debajo, todo lo pendiente. El <b>+</b> apunta cosas nuevas y las tres rayas abren «Más».'],
   trabajos: ['Tus trabajos', 'Toca <b>+ Nuevo</b> para apuntar uno (solo dos datos). En «Lo que me renta» ves cuánto ganas por hora.'],
   trabajo: ['Un trabajo', 'Tiene 4 pestañas: Resumen, Presupuesto, Material y Plano. En Resumen pones el reloj en marcha y marcas los cobros.'],
-  presupuesto: ['El presupuesto', 'Añade partidas, revisa el total y toca «Generar PDF» para mandarlo por WhatsApp.'],
+  presupuesto: ['El presupuesto', 'Añade partidas, revisa el total y toca «Enviar PDF» para mandarlo por WhatsApp.'],
   preparar: ['Material del trabajo', '«Lista sugerida» propone lo habitual para esta chapuza. Lo que marques va a la lista de la compra.'],
   plano: ['El plano', 'Toca las esquinas para dibujar, el punto amarillo cierra, y con «Medir» pones lo que mide cada pared. Pellizca para acercar.'],
   compra: ['La compra', 'Marca cada cosa cuando la compres. En «Lo que tengo» llevas tu almacén y te avisa cuando quede poco.'],

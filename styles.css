@@ -142,3 +142,12 @@ details>summary::after{content:'+';margin-left:auto;font-size:24px;color:var(--i
 .sheet>*{flex-shrink:0}
 .pills{flex-shrink:0;min-height:42px;align-items:center}
 #ck-tipos{flex-wrap:wrap;overflow:visible}
+/* v0.5.2 · avisos arriba para no tapar botones */
+.toast{max-width:92vw}
+.btn{min-width:0}
+.btn:disabled{opacity:1;background:var(--line2);color:var(--ink2);box-shadow:none}
+.btn.sm{white-space:nowrap}
+.kpis .n{font-size:clamp(18px,6vw,26px);white-space:nowrap}
+.top h1{font-size:clamp(26px,8.4vw,34px);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top>.btn,.top>.row{flex-shrink:0}
+#view .pills[style*="wrap"],.pills.wrap{flex-wrap:wrap}
