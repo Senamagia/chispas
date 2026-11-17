@@ -2,7 +2,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js', 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js', 'firebase-config.js');
 firebase.initializeApp(FIREBASE_CONFIG);
 firebase.messaging(); // muestra solo los avisos que llegan con la app cerrada
-const CACHE = 'chispas-v0.2.0';
+const CACHE = 'chispas-v0.2.1';
 const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'cloud.js', 'firebase-config.js', 'logo.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/badge-96.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))); self.clients.claim(); });

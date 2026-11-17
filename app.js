@@ -443,7 +443,7 @@ views.menu = () => `<header class="row"><button class="back" onclick="history.ba
        ['#copia', 'Copia de seguridad', db.ajustes.ultimaCopia ? 'Última: ' + fmtWhen(db.ajustes.ultimaCopia) : 'Todavía no has hecho ninguna'], ['#avisos', 'Avisos en el móvil', 'Permisos y prueba'],
        ['#apariencia', 'Apariencia', { auto: 'Automático (como el móvil)', claro: 'Claro', oscuro: 'Oscuro' }[db.ajustes.tema]], ['#voz', 'Voz', 'Qué le puedes decir']]
       .map(([h, t, s]) => `<a class="item" href="${h}" style="text-decoration:none;color:inherit;align-items:center"><div class="grow"><div class="t">${t}</div><div class="muted">${esc(s)}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>`).join('')}
-  </section><div class="muted" style="text-align:center">Chispas v0.2</div>`;
+  </section><div class="muted" style="text-align:center">Chispas v0.2.1</div>`;
 
 let oficioCat = 'Electricidad';
 views.catalogo = () => {
@@ -476,7 +476,7 @@ views.avisos = () => {
     <div class="between"><b>Permiso de avisos</b><span class="chip ${perm === 'granted' ? 'ok' : 'red'}">${perm === 'granted' ? 'Activado' : perm === 'denied' ? 'Bloqueado' : 'Sin activar'}</span></div>
     ${perm === 'default' ? '<button class="btn block" onclick="pedirAvisos()">Activar avisos</button>' : ''}
     ${perm === 'denied' ? '<div class="tip">Están bloqueados. Mantén pulsado el icono de Chispas › Información de la app › Notificaciones › Permitir.</div>' : ''}
-    ${perm === 'granted' ? '<button class="btn light block" onclick="probarAviso()">Probar aviso</button>' : ''}
+    ${perm === 'granted' ? '<button class="btn light block" onclick="probarAviso()">Probar que el móvil enseña avisos (al momento)</button>' : ''}
   </section>
   <section class="card"><h2>En tu Samsung Galaxy</h2><ol style="margin:8px 0 0;padding-left:20px;line-height:1.5">
     <li>Ajustes › Aplicaciones › <b>Chrome</b> › Batería › <b>Sin restricciones</b>.</li>
@@ -484,7 +484,9 @@ views.avisos = () => {
     <li>Ajustes › Batería › Límites de uso en segundo plano › <b>Aplicaciones que nunca se suspenden</b> › añade Chrome y Chispas.</li></ol></section>
   <section class="card" style="display:flex;flex-direction:column;gap:10px"><h2>Avisos aunque no abras la app</h2>
     ${window.cloud?.user ? `<div class="muted">Te avisamos de lo que no debes olvidar, la tarde antes de cada obra a las 20:00 y si una herramienta prestada lleva una semana fuera.</div>
-      <button class="btn block ${cloud.avisosOk ? 'light' : 'brand'}" onclick="cloud.activarAvisos()">${cloud.avisosOk ? 'Avisos activados en este móvil ✓' : 'Activar avisos en este móvil'}</button>`
+      <button class="btn block ${cloud.avisosOk ? 'light' : 'brand'}" onclick="cloud.activarAvisos()">${cloud.avisosOk ? 'Avisos activados en este móvil ✓' : 'Activar avisos en este móvil'}</button>
+      <button class="btn block" onclick="cloud.pruebaReal()">Enviarme un aviso de prueba</button>
+      <div class="muted">${cloud.pruebaEnviada ? '<b>Prueba enviada a las ' + fmtTime(cloud.pruebaEnviada) + '.</b> Cierra la app o bloquea el móvil: te llegará en menos de 5 minutos.' : 'Hace el recorrido completo, igual que los avisos de verdad: tarda hasta 5 minutos en llegar.'}</div>`
       : '<div class="tip">Para recibirlos tienes que entrar con tu cuenta.</div><a class="btn block" href="#cuenta">Entrar o crear cuenta</a>'}
   </section>`;
 };

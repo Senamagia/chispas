@@ -90,6 +90,12 @@ window.cloud = cloud;
       cloud.avisosOk = true; return true;
     } catch (e) { console.warn(e); return false; }
   }
+  cloud.pruebaReal = async () => {
+    if (!cloud.user) return toast('Primero entra con tu cuenta');
+    if (!(await registrarToken(true))) return toast('Activa los avisos en este móvil primero');
+    try { await fs.collection('avisos').doc(cloud.user.uid + '_prueba_' + Date.now()).set({ uid: cloud.user.uid, when: Date.now(), title: '¡Funciona! 💡', body: 'Así te llegarán los avisos de Chispas, aunque tengas la app cerrada.', link: '#avisos' });
+      cloud.pruebaEnviada = Date.now(); render(); toast('Prueba enviada. Bloquea el móvil y espera'); } catch { toast('Sin conexión: inténtalo con cobertura'); }
+  };
   cloud.activarAvisos = async () => { const ok = await registrarToken(true); toast(ok ? 'Avisos activados en este móvil' : 'No se pudieron activar los avisos'); render(); };
 
   // ---- Cuenta ----
